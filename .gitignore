@@ -1,0 +1,23 @@
+# Ignore all root-level directories and files
+/*
+
+# Allow only the backend folder and this gitignore file
+!/docubot-backend/
+!.gitignore
+
+# Python / Backend ignores
+docubot-backend/.venv/
+docubot-backend/.env
+docubot-backend/.pytest_cache/
+docubot-backend/server.log
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/*.db
+**/*.sqlite
+
+# OS / IDE specific ignores
+.DS_Store
+.idea/
+.vscode/
