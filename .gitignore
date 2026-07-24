@@ -1,9 +1,21 @@
 # Ignore all root-level directories and files
 /*
 
-# Allow only the backend folder and this gitignore file
+# Allow backend, frontend, and this gitignore file
 !/docubot-backend/
+!/docubot-frontend/
 !.gitignore
+
+# Frontend ignores
+docubot-frontend/node_modules/
+docubot-frontend/.next/
+docubot-frontend/out/
+docubot-frontend/build/
+docubot-frontend/.env*
+docubot-frontend/.vercel/
+docubot-frontend/*.tsbuildinfo
+docubot-frontend/next-env.d.ts
+docubot-frontend/coverage/
 
 # Python / Backend ignores
 docubot-backend/.venv/
