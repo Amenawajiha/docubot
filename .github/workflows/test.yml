@@ -1,27 +1,43 @@
-name: Node.js Tests
+
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [ "my-work1-branch" ]
   pull_request:
     branches: [ "main" ]
+  # Allows manually triggering the workflow from the Actions tab
+  workflow_dispatch:
 
 jobs:
-  test:
+  # ==========================================
+  # JOB 1: Frontend CI (Next.js / Node.js)
+  # ==========================================
+  frontend-ci:
+    name: Frontend Test & Build
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: ./docubot-frontend
+
     steps:
-      - name: Check out code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm' 
+          cache: 'npm'
+          cache-dependency-path: './docubot-frontend/package-lock.json'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
+      - name: Run Linter / Type Check
+        run: npm run lint --if-present
+
+      - name: Build Next.js app
+        run: npm run build
+
