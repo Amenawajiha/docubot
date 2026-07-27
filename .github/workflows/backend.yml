@@ -34,11 +34,11 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --frozen
+             uv add --dev aiosqlite
 
       - name: Run Pytest
-        run: |
-          uv run --extra dev pytest tests/ -v --tb=short
-          uv add --dev aiosqlite
+        run: uv run --extra dev pytest tests/ -v --tb=short
+    
 
 
 
