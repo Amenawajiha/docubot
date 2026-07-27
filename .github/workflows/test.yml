@@ -6,6 +6,10 @@ on:
     branches: [ "my-work1-branch" ]
   pull_request:
     branches: [ "main" ]
+env: 
+  NODE_VERSION: 20
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+    
   # Allows manually triggering the workflow from the Actions tab
   workflow_dispatch:
 
