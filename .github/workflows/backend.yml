@@ -30,12 +30,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
 
       - name: Install dependencies
         run: uv sync --frozen
 
       - name: Run Pytest
-        run: uv run pytest
+        run: uv run pytest tests/ -v --tb=short
 
 
