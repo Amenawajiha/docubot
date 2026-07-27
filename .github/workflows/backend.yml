@@ -38,7 +38,7 @@ jobs:
           uv add --dev aiosqlite
 
       - name: Run Pytest
-        run: uv run --extra dev pytest tests/ -v --tb=short
+        run: PYTHONPATH=. uv run --extra dev pytest tests/ -v --tb=short
     
 
 
