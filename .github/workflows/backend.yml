@@ -36,6 +36,7 @@ jobs:
         run: uv sync --frozen
 
       - name: Run Pytest
-        run: uv run pytest tests/ -v --tb=short
+        run: uv run --extra dev pytest tests/ -v --tb=short
+
 
 
