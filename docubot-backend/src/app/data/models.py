@@ -19,8 +19,13 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    JSON,
 )
-from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
+from sqlalchemy.dialects.postgresql import INET, UUID
+from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
+
+# Use JSONB for PostgreSQL (production), fallback to standard JSON for SQLite (tests)
+JSONB = JSON().with_variant(PG_JSONB, "postgresql")
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 

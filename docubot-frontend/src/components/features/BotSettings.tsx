@@ -53,13 +53,15 @@ export default function BotSettings() {
     workspaceId
   } = useWorkspace();
 
+  const activeBot = currentChatbot || chatbots[0];
+
   const {
     messages: studioMessages,
     isTyping: studioIsTyping,
     connectionStatus,
     error,
     sendMessage
-  } = usePlayground(workspaceId || undefined, currentChatbot?.id);
+  } = usePlayground(workspaceId || undefined, activeBot?.id);
 
   const [studioInput, setStudioInput] = useState("");
 
@@ -83,22 +85,23 @@ export default function BotSettings() {
   const [color, setColor] = useState("#0052ff");
   const [tone, setTone] = useState("Friendly");
 
-  // Sync draft states when currentChatbot loads or changes
+  // Sync draft states when activeBot loads or changes
   useEffect(() => {
-    if (currentChatbot) {
-      setName(currentChatbot.name || "");
-      setWelcomeMessage(currentChatbot.welcomeMessage || "Hello! Welcome to our website. How can I help you today?");
-      setAvatarEmoji(currentChatbot.avatarEmoji || "🤖");
-      setSystemPrompt(currentChatbot.systemPrompt || "You are a helpful assistant...");
-      setLlmProvider(currentChatbot.llmProvider || "OpenAI");
-      setSelectedModel(currentChatbot.selectedModel || "gpt-4o");
-      setApiKey(currentChatbot.apiKey || "");
-      setColor(currentChatbot.color || "#0052ff");
-      setTone(currentChatbot.tone || "Friendly");
+    if (activeBot) {
+      setName(activeBot.name || "");
+      setWelcomeMessage(activeBot.welcomeMessage || "Hello! Welcome to our website. How can I help you today?");
+      setAvatarEmoji(activeBot.avatarEmoji || "🤖");
+      setSystemPrompt(activeBot.systemPrompt || "You are a helpful assistant...");
+      setLlmProvider(activeBot.llmProvider || "OpenAI");
+      setSelectedModel(activeBot.selectedModel || "gpt-4o");
+      setApiKey(activeBot.apiKey || "");
+      setColor(activeBot.color || "#0052ff");
+      setTone(activeBot.tone || "Friendly");
     }
-  }, [currentChatbot]);
+  }, [activeBot]);
 
   const handleSaveSettings = async () => {
+    if (!workspaceId || !activeBot?.id) return;
     if (botStudioTab === "ai-engine") {
       try {
         const payload = {
@@ -108,7 +111,7 @@ export default function BotSettings() {
           custom_system_prompt: systemPrompt,
           tone_preset: tone.toLowerCase()
         };
-        const res = await fetchApi(`/workspaces/${workspaceId}/chatbots/${currentChatbot.id}`, {
+        const res = await fetchApi(`/workspaces/${workspaceId}/chatbots/${activeBot.id}`, {
           method: "PATCH",
           body: JSON.stringify(payload)
         });
@@ -118,7 +121,7 @@ export default function BotSettings() {
         
         setChatbots((prev) =>
           prev.map((b) =>
-            b.id === currentChatbot.id
+            b.id === activeBot.id
               ? {
                   ...b,
                   systemPrompt: updatedBot.custom_system_prompt,
@@ -138,7 +141,7 @@ export default function BotSettings() {
     } else {
       setChatbots((prev) =>
         prev.map((b) =>
-          b.id === currentChatbot.id
+          b.id === activeBot.id
             ? {
                 ...b,
                 name,
@@ -155,17 +158,18 @@ export default function BotSettings() {
         )
       );
       alert("Bot configuration saved & published successfully!");
-      router.push(`/dashboard/${workspaceId}/bots/${currentChatbot.id}/deployment`);
+      router.push(`/dashboard/${workspaceId}/bots/${activeBot.id}/deployment`);
     }
   };
 
   const handleSaveAppearance = async () => {
+    if (!workspaceId || !activeBot?.id) return;
     try {
       const payload = {
         welcome_message: welcomeMessage,
         brand_color: color
       };
-      const res = await fetchApi(`/workspaces/${workspaceId}/chatbots/${currentChatbot.id}`, {
+      const res = await fetchApi(`/workspaces/${workspaceId}/chatbots/${activeBot.id}`, {
         method: "PATCH",
         body: JSON.stringify(payload)
       });
@@ -175,7 +179,7 @@ export default function BotSettings() {
 
       setChatbots((prev) =>
         prev.map((b) =>
-          b.id === currentChatbot.id
+          b.id === activeBot.id
             ? {
                 ...b,
                 welcomeMessage: updatedBot.welcome_message,

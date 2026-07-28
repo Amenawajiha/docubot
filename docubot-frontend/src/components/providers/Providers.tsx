@@ -1,6 +1,14 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { fetchApi } from "@/lib/api";
 
@@ -38,7 +46,7 @@ const INITIAL_FILES: FileItem[] = [
     uploadedAt: "2026-07-02",
     botIds: ["bot-1"],
     coverage: "94%",
-    status: "Ready"
+    status: "Ready",
   },
   {
     id: "doc-2",
@@ -48,7 +56,7 @@ const INITIAL_FILES: FileItem[] = [
     uploadedAt: "2026-07-01",
     botIds: ["bot-1"],
     coverage: "88%",
-    status: "Ready"
+    status: "Ready",
   },
   {
     id: "doc-3",
@@ -58,8 +66,8 @@ const INITIAL_FILES: FileItem[] = [
     uploadedAt: "2026-07-02",
     botIds: ["bot-1"],
     coverage: "91%",
-    status: "Syncing"
-  }
+    status: "Syncing",
+  },
 ];
 
 // ----------------------------------------------------
@@ -156,7 +164,7 @@ interface WorkspaceContextType {
   workspaceId: string;
   currentChatbot: MockChatbot;
   changeCurrentChatbot: (botId: string) => void;
-  
+
   // Wizard identity states
   wizardStep: number;
   setWizardStep: (step: number) => void;
@@ -188,7 +196,7 @@ interface WorkspaceContextType {
   setInputUrl: (val: string) => void;
 
   // Playgrounds managed by usePlayground hook now
-  
+
   // Payment/Checkout
   selectedPlan: "starter" | "pro" | "enterprise";
   setSelectedPlan: (val: "starter" | "pro" | "enterprise") => void;
@@ -219,11 +227,14 @@ interface WorkspaceContextType {
   resetWizard: () => void;
 }
 
-const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
+const WorkspaceContext = createContext<WorkspaceContextType | undefined>(
+  undefined,
+);
 
 export function useWorkspace() {
   const context = useContext(WorkspaceContext);
-  if (!context) throw new Error("useWorkspace must be used within a WorkspaceProvider");
+  if (!context)
+    throw new Error("useWorkspace must be used within a WorkspaceProvider");
   return context;
 }
 
@@ -274,11 +285,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
   // Dynamic Workspace and Chatbot context parsing
   const segments = pathname ? pathname.split("/") : [];
   const urlWorkspaceId = segments[2];
-  const workspaceId = urlWorkspaceId || (workspaces.length > 0 ? workspaces[0].id : "");
-  
+  const workspaceId =
+    urlWorkspaceId || (workspaces.length > 0 ? workspaces[0].id : "");
+
   // Find current chatbot based on URL
-  const botIdFromUrl = (segments[3] === "bots" && segments[4] !== "new") ? segments[4] : undefined;
-  
+  const botIdFromUrl =
+    segments[3] === "bots" && segments[4] !== "new" ? segments[4] : undefined;
+
   // Track selected chatbot fallback in state if not on a bot-specific route
   const [selectedBotIdState, setSelectedBotIdState] = useState<string>("bot-1");
 
@@ -290,19 +303,29 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, [botIdFromUrl]);
 
   const activeBotId = botIdFromUrl || selectedBotIdState;
-  const currentChatbot = chatbots.find((b) => b.id === activeBotId) || chatbots[0] || INITIAL_BOTS[0];
+  const currentChatbot =
+    chatbots.find((b) => b.id === activeBotId) ||
+    chatbots[0] ||
+    INITIAL_BOTS[0];
 
+  const changeCurrentChatbot = useCallback(
+    (newBotId: string) => {
+      setSelectedBotIdState(newBotId);
 
-  const changeCurrentChatbot = useCallback((newBotId: string) => {
-    setSelectedBotIdState(newBotId);
-    
-    // Check if we are on a bot-specific route: /dashboard/[workspaceId]/bots/[botId]/[subpage]
-    if (segments.length >= 5 && segments[1] === "dashboard" && segments[3] === "bots" && segments[4] !== "new") {
-      const newSegments = [...segments];
-      newSegments[4] = newBotId;
-      router.push(newSegments.join("/"));
-    }
-  }, [segments, router]);
+      // Check if we are on a bot-specific route: /dashboard/[workspaceId]/bots/[botId]/[subpage]
+      if (
+        segments.length >= 5 &&
+        segments[1] === "dashboard" &&
+        segments[3] === "bots" &&
+        segments[4] !== "new"
+      ) {
+        const newSegments = [...segments];
+        newSegments[4] = newBotId;
+        router.push(newSegments.join("/"));
+      }
+    },
+    [segments, router],
+  );
 
   // Wizard identity states
   const [wizardStep, setWizardStep] = useState(1);
@@ -322,7 +345,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [inputUrl, setInputUrl] = useState("");
 
   // Payment/Checkout
-  const [selectedPlan, setSelectedPlan] = useState<"starter" | "pro" | "enterprise">("starter");
+  const [selectedPlan, setSelectedPlan] = useState<
+    "starter" | "pro" | "enterprise"
+  >("starter");
   const [cardName, setCardName] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
@@ -339,11 +364,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const checkAuthAndLoadData = async () => {
       const logged = localStorage.getItem("isLoggedIn") === "true";
       const deployed = localStorage.getItem("hasDeployed") === "true";
-      
+
       if (deployed) {
         setHasDeployed(true);
       }
-      
+
       setIsLoggedIn(logged);
 
       if (logged) {
@@ -353,7 +378,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           if (!authRes.ok) throw new Error("Auth failed");
           const authData = await authRes.json();
           setUser(authData);
-          
+
           if (pathname && pathname.startsWith("/dashboard")) {
             // 2. Fetch Workspaces
             const wsRes = await fetchApi("/workspaces");
@@ -365,47 +390,62 @@ export function Providers({ children }: { children: React.ReactNode }) {
               } else if (pathname === "/dashboard") {
                 router.replace(`/dashboard/${wsData[0].id}`);
               }
-              
+
               // 3. Fetch Chatbots for the current workspace
-              const currentWsId = urlWorkspaceId || (wsData.length > 0 ? wsData[0].id : null);
+              const currentWsId =
+                urlWorkspaceId || (wsData.length > 0 ? wsData[0].id : null);
               if (currentWsId) {
-                const botsRes = await fetchApi(`/workspaces/${currentWsId}/chatbots`);
+                const botsRes = await fetchApi(
+                  `/workspaces/${currentWsId}/chatbots`,
+                );
                 if (botsRes.ok) {
                   const botsData = await botsRes.json();
-                  
+
                   // Fetch stats for all bots concurrently
-                  const botsWithStats = await Promise.all(botsData.map(async (b: any) => {
-                    let docsCount = 0;
-                    try {
-                      const statsRes = await fetchApi(`/workspaces/${currentWsId}/chatbots/${b.id}/knowledge-base/stats`);
-                      if (statsRes.ok) {
-                        const statsData = await statsRes.json();
-                        docsCount = statsData.total_documents || 0;
+                  const botsWithStats = await Promise.all(
+                    botsData.map(async (b: any) => {
+                      let docsCount = 0;
+                      try {
+                        const statsRes = await fetchApi(
+                          `/workspaces/${currentWsId}/chatbots/${b.id}/knowledge-base/stats`,
+                        );
+                        if (statsRes.ok) {
+                          const statsData = await statsRes.json();
+                          docsCount = statsData.total_documents || 0;
+                        }
+                      } catch (e) {
+                        console.error("Failed to fetch bot stats", e);
                       }
-                    } catch (e) {
-                      console.error("Failed to fetch bot stats", e);
-                    }
-                    
-                    return {
-                      id: b.id,
-                      name: b.name,
-                      goal: "Support",
-                      status: b.is_active ? "Active" : "Inactive",
-                      chats: b.total_conversations || 0,
-                      docs: docsCount,
-                      plan: "Free",
-                      created: b.created_at,
-                      updated_at: b.updated_at,
-                      deployment_status: b.deployment_status,
-                      color: b.brand_color || "#0052ff",
-                      tone: b.tone_preset ? b.tone_preset.charAt(0).toUpperCase() + b.tone_preset.slice(1).toLowerCase() : "Friendly",
-                      systemPrompt: b.custom_system_prompt,
-                      selectedModel: b.llm_model,
-                      llmProvider: b.llm_provider ? (b.llm_provider.toLowerCase() === "openai" ? "OpenAI" : b.llm_provider.charAt(0).toUpperCase() + b.llm_provider.slice(1).toLowerCase()) : "OpenAI",
-                      welcomeMessage: b.welcome_message
-                    };
-                  }));
-                  
+
+                      return {
+                        id: b.id,
+                        name: b.name,
+                        goal: "Support",
+                        status: b.is_active ? "Active" : "Inactive",
+                        chats: b.total_conversations || 0,
+                        docs: docsCount,
+                        plan: "Free",
+                        created: b.created_at,
+                        updated_at: b.updated_at,
+                        deployment_status: b.deployment_status,
+                        color: b.brand_color || "#0052ff",
+                        tone: b.tone_preset
+                          ? b.tone_preset.charAt(0).toUpperCase() +
+                            b.tone_preset.slice(1).toLowerCase()
+                          : "Friendly",
+                        systemPrompt: b.custom_system_prompt,
+                        selectedModel: b.llm_model,
+                        llmProvider: b.llm_provider
+                          ? b.llm_provider.toLowerCase() === "openai"
+                            ? "OpenAI"
+                            : b.llm_provider.charAt(0).toUpperCase() +
+                              b.llm_provider.slice(1).toLowerCase()
+                          : "OpenAI",
+                        welcomeMessage: b.welcome_message,
+                      };
+                    }),
+                  );
+
                   setChatbots(botsWithStats);
                 }
               }
@@ -454,7 +494,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     try {
       const res = await fetchApi("/workspaces", {
         method: "POST",
-        body: JSON.stringify({ name: newWorkspaceName })
+        body: JSON.stringify({ name: newWorkspaceName }),
       });
       if (res.ok) {
         const newWs = await res.json();
@@ -504,7 +544,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
                 setWizardStep(3); // Auto proceed to playground testing in wizard
               } else {
                 // Redirect to Bot Studio (Settings)
-                router.push(`/dashboard/${workspaceId}/bots/${activeBotId}/settings`);
+                router.push(
+                  `/dashboard/${workspaceId}/bots/${activeBotId}/settings`,
+                );
               }
             }, 600);
             return 100;
@@ -522,12 +564,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
       const filesArr = Array.from(e.target.files);
 
       // Filter out files that exceed 5MB
-      const oversizedFiles = filesArr.filter(file => file.size > maxFreeSize);
+      const oversizedFiles = filesArr.filter((file) => file.size > maxFreeSize);
       if (oversizedFiles.length > 0) {
         alert(
           `Under the Free Trial plan, documents must be below 5 MB.\n` +
-          `The following file(s) exceed this limit:\n` +
-          oversizedFiles.map(file => `- ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`).join("\n")
+            `The following file(s) exceed this limit:\n` +
+            oversizedFiles
+              .map(
+                (file) =>
+                  `- ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`,
+              )
+              .join("\n"),
         );
         return;
       }
@@ -540,7 +587,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         uploadedAt: new Date().toISOString().split("T")[0],
         botIds: [botIdFromUrl || "new-bot-temp"],
         coverage: "92%",
-        status: "Ready" as const
+        status: "Ready" as const,
       }));
       setUploadedFiles((prev) => [...prev, ...formattedFiles]);
     }
@@ -572,10 +619,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
       uploadedAt: new Date().toISOString().split("T")[0],
       botIds: [targetBotId],
       coverage: "91%",
-      status: "Syncing" as const
+      status: "Syncing" as const,
     };
 
-    if (uploadedFiles.some((f) => f.name.toLowerCase() === urlToVerify.toLowerCase() && f.botIds.includes(targetBotId))) {
+    if (
+      uploadedFiles.some(
+        (f) =>
+          f.name.toLowerCase() === urlToVerify.toLowerCase() &&
+          f.botIds.includes(targetBotId),
+      )
+    ) {
       alert("This URL has already been added for this chatbot.");
       return;
     }
@@ -607,22 +660,35 @@ export function Providers({ children }: { children: React.ReactNode }) {
       const newlyCreatedBot: MockChatbot = {
         id: newBotId,
         name: newBotName || "Support Assistant",
-        goal: newBotGoal === "Support" ? "Customer Support" : newBotGoal === "Leads" ? "Lead Generation" : "E-commerce Help",
+        goal:
+          newBotGoal === "Support"
+            ? "Customer Support"
+            : newBotGoal === "Leads"
+              ? "Lead Generation"
+              : "E-commerce Help",
         status: "Active",
         chats: 0,
-        docs: uploadedFiles.filter(f => f.botIds.includes("new-bot-temp")).length,
-        plan: selectedPlan === "starter" ? "Free" : selectedPlan === "pro" ? "Pro" : "Enterprise",
+        docs: uploadedFiles.filter((f) => f.botIds.includes("new-bot-temp"))
+          .length,
+        plan:
+          selectedPlan === "starter"
+            ? "Free"
+            : selectedPlan === "pro"
+              ? "Pro"
+              : "Enterprise",
         created: new Date().toISOString().split("T")[0],
         color: newBotColor,
-        tone: newBotTone
+        tone: newBotTone,
       };
 
       // Map temp files to the actual newly created chatbot ID
-      setUploadedFiles(prev => prev.map(file =>
-        file.botIds.includes("new-bot-temp")
-          ? { ...file, botIds: [newBotId] }
-          : file
-      ));
+      setUploadedFiles((prev) =>
+        prev.map((file) =>
+          file.botIds.includes("new-bot-temp")
+            ? { ...file, botIds: [newBotId] }
+            : file,
+        ),
+      );
 
       setChatbots((prev) => [newlyCreatedBot, ...prev]);
       setHasDeployed(true);
@@ -639,13 +705,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
       left: Math.random() * 100,
       color: colors[Math.floor(Math.random() * colors.length)],
       delay: Math.random() * 1.5,
-      scale: 0.5 + Math.random() * 0.8
+      scale: 0.5 + Math.random() * 0.8,
     }));
     setConfetti(pieces);
   };
 
   const getIframeCode = () => {
-    const botId = newBotName.toLowerCase().replace(/\s+/g, "-") || "assistant-bot";
+    const botId =
+      newBotName.toLowerCase().replace(/\s+/g, "-") || "assistant-bot";
     return `<script \n  src="https://cdn.docubot.ai/widget.js" \n  data-bot-id="${botId}" \n  data-theme-color="${newBotColor}">\n</script>`;
   };
 
@@ -660,7 +727,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     setNewBotName("");
     setNewBotDesc("");
     // Filter out temporary files uploaded during wizard creation
-    setUploadedFiles(prev => prev.filter(f => !f.botIds.includes("new-bot-temp")));
+    setUploadedFiles((prev) =>
+      prev.filter((f) => !f.botIds.includes("new-bot-temp")),
+    );
     setIsTrained(false);
     setCardName("");
     setCardNumber("");
@@ -671,121 +740,139 @@ export function Providers({ children }: { children: React.ReactNode }) {
     router.push(`/dashboard/${workspaceId}`);
   };
 
-  const workspaceValue = useMemo(() => ({
-    sidebarOpen,
-    setSidebarOpen,
-    sidebarCollapsed,
-    setSidebarCollapsed,
-    chatbots,
-    setChatbots,
-    hasDeployed,
-    setHasDeployed,
-    workspaces,
-    setWorkspaces,
-    
-    workspaceId,
-    currentChatbot,
-    changeCurrentChatbot,
-    
-    wizardStep,
-    setWizardStep,
-    newBotName,
-    setNewBotName,
-    newBotDesc,
-    setNewBotDesc,
-    newBotGoal,
-    setNewBotGoal,
-    newBotTone,
-    setNewBotTone,
-    newBotColor,
-    setNewBotColor,
-    selectedModel,
-    setSelectedModel,
+  const workspaceValue = useMemo(
+    () => ({
+      sidebarOpen,
+      setSidebarOpen,
+      sidebarCollapsed,
+      setSidebarCollapsed,
+      chatbots,
+      setChatbots,
+      hasDeployed,
+      setHasDeployed,
+      workspaces,
+      setWorkspaces,
 
-    uploadedFiles,
-    setUploadedFiles,
-    isTraining,
-    setIsTraining,
-    trainingProgress,
-    setTrainingProgress,
-    isTrained,
-    setIsTrained,
-    uploadMethod,
-    setUploadMethod,
-    inputUrl,
-    setInputUrl,
+      workspaceId,
+      currentChatbot,
+      changeCurrentChatbot,
 
-    selectedPlan,
-    setSelectedPlan,
-    cardName,
-    setCardName,
-    cardNumber,
-    setCardNumber,
-    cardExpiry,
-    setCardExpiry,
-    cardCvv,
-    setCardCvv,
-    isPaying,
-    setIsPaying,
-    paymentSuccess,
-    setPaymentSuccess,
+      wizardStep,
+      setWizardStep,
+      newBotName,
+      setNewBotName,
+      newBotDesc,
+      setNewBotDesc,
+      newBotGoal,
+      setNewBotGoal,
+      newBotTone,
+      setNewBotTone,
+      newBotColor,
+      setNewBotColor,
+      selectedModel,
+      setSelectedModel,
 
-    confetti,
-    embedCodeCopied,
-    startTraining,
-    handleFileUpload,
-    handleUrlSubmit,
-    removeFile,
-    handlePayment,
-    generateConfetti,
-    getIframeCode,
-    copyEmbedCode,
-    resetWizard
-  }), [
-    sidebarOpen,
-    sidebarCollapsed,
-    chatbots,
-    hasDeployed,
-    workspaces,
-    workspaceId,
-    currentChatbot,
-    changeCurrentChatbot,
-    wizardStep,
-    newBotName,
-    newBotDesc,
-    newBotGoal,
-    newBotTone,
-    newBotColor,
-    selectedModel,
-    uploadedFiles,
-    isTraining,
-    trainingProgress,
-    isTrained,
-    uploadMethod,
-    inputUrl,
-    selectedPlan,
-    cardName,
-    cardNumber,
-    cardExpiry,
-    cardCvv,
-    isPaying,
-    paymentSuccess,
-    confetti,
-    embedCodeCopied
-  ]);
+      uploadedFiles,
+      setUploadedFiles,
+      isTraining,
+      setIsTraining,
+      trainingProgress,
+      setTrainingProgress,
+      isTrained,
+      setIsTrained,
+      uploadMethod,
+      setUploadMethod,
+      inputUrl,
+      setInputUrl,
+
+      selectedPlan,
+      setSelectedPlan,
+      cardName,
+      setCardName,
+      cardNumber,
+      setCardNumber,
+      cardExpiry,
+      setCardExpiry,
+      cardCvv,
+      setCardCvv,
+      isPaying,
+      setIsPaying,
+      paymentSuccess,
+      setPaymentSuccess,
+
+      confetti,
+      embedCodeCopied,
+      startTraining,
+      handleFileUpload,
+      handleUrlSubmit,
+      removeFile,
+      handlePayment,
+      generateConfetti,
+      getIframeCode,
+      copyEmbedCode,
+      resetWizard,
+    }),
+    [
+      sidebarOpen,
+      sidebarCollapsed,
+      chatbots,
+      hasDeployed,
+      workspaces,
+      workspaceId,
+      currentChatbot,
+      changeCurrentChatbot,
+      wizardStep,
+      newBotName,
+      newBotDesc,
+      newBotGoal,
+      newBotTone,
+      newBotColor,
+      selectedModel,
+      uploadedFiles,
+      isTraining,
+      trainingProgress,
+      isTrained,
+      uploadMethod,
+      inputUrl,
+      selectedPlan,
+      cardName,
+      cardNumber,
+      cardExpiry,
+      cardCvv,
+      isPaying,
+      paymentSuccess,
+      confetti,
+      embedCodeCopied,
+    ],
+  );
 
   return (
     <ThemeContext.Provider value={{ isDarkTheme, toggleTheme }}>
-      <AuthContext.Provider value={{ isLoggedIn, loading, user, handleLogout, setLoggedIn: setIsLoggedIn, setUser }}>
+      <AuthContext.Provider
+        value={{
+          isLoggedIn,
+          loading,
+          user,
+          handleLogout,
+          setLoggedIn: setIsLoggedIn,
+          setUser,
+        }}
+      >
         <WorkspaceContext.Provider value={workspaceValue}>
           {showWorkspacePrompt && (
             <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
               <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-800">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Create Your First Workspace</h2>
-                <p className="text-sm text-slate-500 mb-6">You need a workspace to start creating chatbots.</p>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                  Create Your First Workspace
+                </h2>
+                <p className="text-sm text-slate-500 mb-6">
+                  You need a workspace to start creating chatbots.
+                </p>
                 <form onSubmit={handleCreateWorkspace}>
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Workspace Name</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Workspace Name
+                    </label>
                     <input
                       type="text"
                       required

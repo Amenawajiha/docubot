@@ -158,6 +158,24 @@ export default function Deployments() {
     const nextState = !isLive;
 
     if (workspaceId && botId) {
+      if (nextState) {
+        // Prevent publishing if the knowledge base is completely empty
+        try {
+          const docsRes = await fetchApi(`/workspaces/${workspaceId}/chatbots/${botId}/documents`);
+          if (docsRes.ok) {
+            const docs = await docsRes.json();
+            if (!docs || docs.length === 0) {
+              showToast("Cannot publish: Knowledge base is empty. Please add documents first.");
+              return;
+            }
+          }
+        } catch (err) {
+          console.error("Failed to validate knowledge base", err);
+          showToast("Failed to validate knowledge base.");
+          return;
+        }
+      }
+
       try {
         if (nextState) {
           await fetchApi(`/workspaces/${workspaceId}/chatbots/${botId}`, {
@@ -174,6 +192,8 @@ export default function Deployments() {
         }
       } catch (err) {
         console.error("Failed to update bot deployment status", err);
+        showToast("Failed to update deployment status.");
+        return;
       }
     }
 

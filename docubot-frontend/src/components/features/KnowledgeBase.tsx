@@ -353,13 +353,13 @@ export default function KnowledgeBase() {
                   onChange={handleFileUploadLocal}
                   multiple
                   className="hidden"
-                  accept=".pdf,.txt,.docx,.csv,.xlsx"
+                  accept=".pdf,.txt,.docx,.csv,.xlsx,.pptx,.md,.epub,.png,.jpg,.jpeg,.webp,.tiff,.bmp"
                 />
                 <Upload size={24} className="mx-auto mb-2 text-[#0052ff]" />
                 <p className="text-xs font-semibold text-[#0a0b0d] dark:text-white">
                   {isUploading ? "Uploading file..." : "Click or drag files here to upload"}
                 </p>
-                <p className="text-[10px] text-[#7c828a] mt-1">PDF, DOCX, CSV, XLSX, or TXT (max 5MB)</p>
+                <p className="text-[10px] text-[#7c828a] mt-1">PDF, DOCX, PPTX, XLSX, CSV, MD, TXT, EPUB, Images (max 5MB)</p>
               </div>
             ) : (
               <form

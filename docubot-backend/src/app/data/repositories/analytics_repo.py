@@ -73,7 +73,7 @@ class AnalyticsEventRepository(BaseRepository[AnalyticsEvent]):
                 AnalyticsEvent.event_type == "message_sent",
                 AnalyticsEvent.created_at >= since,
             )
-            .group_by(AnalyticsEvent.event_data["content"].astext)
+            .group_by(text("content"))
             .order_by(text("count DESC"))
             .limit(limit)
         )

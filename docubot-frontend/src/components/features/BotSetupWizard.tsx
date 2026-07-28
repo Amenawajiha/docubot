@@ -476,6 +476,19 @@ export default function BotSetupWizard() {
   const handleAdvancedPublish = async () => {
     setIsPaying(true);
     try { 
+      // Prevent publishing if the knowledge base is completely empty
+      if (workspaceId && currentChatbot?.id) {
+        const docsRes = await fetchApi(`/workspaces/${workspaceId}/chatbots/${currentChatbot.id}/documents`);
+        if (docsRes.ok) {
+          const docs = await docsRes.json();
+          if (!docs || docs.length === 0) {
+            alert("Cannot publish: Knowledge base is empty. Please add documents first.");
+            setIsPaying(false);
+            return;
+          }
+        }
+      }
+
       const provider = selectedModel.toLowerCase().includes("claude")
         ? "anthropic"
         : selectedModel.toLowerCase().includes("gemini")
@@ -775,7 +788,7 @@ export default function BotSetupWizard() {
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".pdf,.docx,.txt,.csv"
+                accept=".pdf,.txt,.docx,.csv,.xlsx,.pptx,.md,.epub,.png,.jpg,.jpeg,.webp,.tiff,.bmp"
                 className="hidden"
                 onChange={handleBrowse}
               />
@@ -795,7 +808,7 @@ export default function BotSetupWizard() {
                   <span className="text-[#0052ff]">browse</span>
                 </p>
                 <p className="text-[10px] text-[#7c828a] mt-0.5">
-                  PDF · DOCX · TXT · CSV · Max 50 MB
+                  PDF, DOCX, PPTX, XLSX, CSV, MD, TXT, EPUB, Images
                 </p>
               </div>
 
