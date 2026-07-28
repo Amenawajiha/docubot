@@ -220,11 +220,11 @@ async def test_change_password_wrong_current(
 
 @pytest.mark.asyncio
 async def test_change_password_requires_auth(client: AsyncClient):
-    """Unauthenticated change-password returns 403."""
+    """Unauthenticated change-password returns 401."""
     r = await client.post("/api/v1/auth/change-password", json={
         "current_password": "Password1", "new_password": "NewPassword2"
     })
-    assert r.status_code == 403
+    assert r.status_code == 401
 
 
 @pytest.mark.asyncio
@@ -252,7 +252,7 @@ async def test_change_password_oauth_user_rejected(
         json={"current_password": "anything", "new_password": "NewPassword2"},
     )
     assert r.status_code == 403
-    assert "social login" in r.json()["detail"].lower()
+    assert "oauth" in r.json()["detail"].lower()
 
 
 @pytest.mark.asyncio

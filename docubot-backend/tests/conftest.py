@@ -38,6 +38,7 @@ os.environ.update({
     "REDIS_URL":                 "redis://localhost:6379/0",
     "ACCESS_TOKEN_EXPIRE_MINUTES": "60",
     "REFRESH_TOKEN_EXPIRE_DAYS": "7",
+    "RATE_LIMIT_ENABLED":        "false",
 })
 
 # Now safe to import app modules
@@ -142,6 +143,11 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     # Patch Redis globally
     with patch(
         "app.infrastructure.cache.redis_client.get_redis",
+        new_callable=AsyncMock,
+        return_value=_fake_redis,
+    ), patch(
+        "app.core.auth.service.get_redis",
+        new_callable=AsyncMock,
         return_value=_fake_redis,
     ):
         async with AsyncClient(
@@ -199,11 +205,12 @@ async def full_login(client: AsyncClient, db_session: AsyncSession,
                      email: str = "user@example.com",
                      password: str = "Password1") -> dict:
     """Register → verify → login. Returns the token response dict."""
-    await client.post("/api/v1/auth/register", json={
+    r_reg = await client.post("/api/v1/auth/register", json={
         "email": email, "password": password, "full_name": "Test User"
     })
     token = await get_verification_token(db_session, email)
-    await client.post("/api/v1/auth/verify-email", json={"token": token})
+    r_ver = await client.get(f"/api/v1/auth/verify-email?token={token}")
+    assert r_ver.status_code in (200, 302, 303, 307), f"Verification failed: {r_ver.text}"
     r = await client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert r.status_code == 200, f"Login failed: {r.text}"
     return r.json()

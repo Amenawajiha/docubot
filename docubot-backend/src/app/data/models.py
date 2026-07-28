@@ -21,11 +21,12 @@ from sqlalchemy import (
     UniqueConstraint,
     JSON,
 )
-from sqlalchemy.dialects.postgresql import INET, UUID
+from sqlalchemy.dialects.postgresql import INET as PG_INET, UUID
 from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB
 
-# Use JSONB for PostgreSQL (production), fallback to standard JSON for SQLite (tests)
+# Use database-agnostic variants for SQLite (tests) compatibility
 JSONB = JSON().with_variant(PG_JSONB, "postgresql")
+INET = String(45).with_variant(PG_INET, "postgresql")
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -994,9 +995,9 @@ class DocumentChunk(Base):  # type: ignore[name-defined]
     )
  
     __table_args__ = (
-        Index("idx_chunks_document", "document_id"),
-        Index("idx_chunks_chatbot", "chatbot_id"),
-        Index("idx_chunks_qdrant", "qdrant_collection_name", "qdrant_point_id"),
+        Index("idx_doc_chunks_document", "document_id"),
+        Index("idx_doc_chunks_chatbot", "chatbot_id"),
+        Index("idx_doc_chunks_qdrant", "qdrant_collection_name", "qdrant_point_id"),
     )
  
  
@@ -1173,8 +1174,8 @@ class WorkspaceUsageLog(Base):  # type: ignore[name-defined]
     )
 
     __table_args__ = (
-        Index("idx_usage_workspace_date", "workspace_id", "log_date"),
-        Index("idx_usage_chatbot_date",   "chatbot_id",   "log_date"),
+        Index("idx_usage_log_workspace_date", "workspace_id", "log_date"),
+        Index("idx_usage_log_chatbot_date",   "chatbot_id",   "log_date"),
     )
 
 

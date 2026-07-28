@@ -32,7 +32,7 @@ def test_hash_password_not_plaintext():
     """Stored hash is not the plaintext password."""
     hashed = hash_password("Password1")
     assert hashed != "Password1"
-    assert hashed.startswith("$2b$")  # bcrypt prefix
+    assert hashed.startswith("$argon2id$")  # argon2id prefix
 
 
 def test_verify_password_correct():
@@ -169,7 +169,7 @@ def test_generate_api_key_format():
     raw, prefix, hashed = generate_api_key()
     assert raw.startswith("db_")
     assert prefix == raw[:12]
-    assert hashed.startswith("$2b$")
+    assert hashed.startswith("$argon2id$")
 
 
 def test_verify_api_key_correct():

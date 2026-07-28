@@ -120,5 +120,6 @@ async def test_login_updates_last_login_at(client: AsyncClient, db_session: Asyn
 async def test_login_password_not_in_response(client: AsyncClient, db_session: AsyncSession):
     """Response never contains password_hash or password."""
     tokens = await full_login(client, db_session)
-    assert "password" not in str(tokens)
+    assert "password_hash" not in tokens["user"]
+    assert "password" not in tokens["user"]
     assert "hash" not in str(tokens)

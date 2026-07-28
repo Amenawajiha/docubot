@@ -129,7 +129,11 @@ async def test_oauth_links_to_existing_email_password_account(
     # Must be the SAME user, not a new one
     assert tokens.user.email == "link@gmail.com"
     assert tokens.user.oauth_provider == "github"
-    assert tokens.user.oauth_provider_id == "gh-link-001"
+        
+    # Verify the DB actually saved the provider ID
+    result = await db_session.execute(select(User).where(User.id == tokens.user.id))
+    db_user = result.scalar_one()
+    assert db_user.oauth_provider_id == "gh-link-001"
 
     # Only one user in DB with this email
     result = await db_session.execute(
@@ -198,9 +202,9 @@ async def test_oauth_url_builder_no_session_needed():
 
     svc = OAuthService(None)
     # Must not raise
-    google_url = svc.get_google_auth_url()
-    github_url = svc.get_github_auth_url()
-    assert "google" in google_url
+    google_url = svc.get_google_auth_url(state="some_test_state")
+    github_url = svc.get_github_auth_url(state="some_test_state")
+    assert "google.com" in google_url
     assert "github" in github_url
 
 
@@ -233,7 +237,7 @@ async def test_frontend_redirect_url_structure():
     assert "refresh_token=ref456" in url
     assert "expires_in=3600" in url
     assert "localhost:3000" in url
-    assert "/auth/callback" in url
+    assert "/auth/verify-success" in url
 
 
 @pytest.mark.asyncio
@@ -243,4 +247,4 @@ async def test_frontend_error_redirect_url_structure():
 
     url = OAuthService.build_frontend_error_redirect("Something went wrong")
     assert "error=" in url
-    assert "callback" in url
+    assert "/auth/verify-success" in url

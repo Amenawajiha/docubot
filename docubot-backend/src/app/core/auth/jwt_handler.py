@@ -38,6 +38,7 @@ def create_access_token(user_id: uuid.UUID) -> str:
     payload = {
         "sub": str(user_id),
         "type": "access",
+        "jti": str(uuid.uuid4()),
         "iat": _now(),
         "exp": expire,
     }
