@@ -22,7 +22,17 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
           script: |
+            # 1. Ensure directory exists and clone repo if missing
+            if [ ! -d "/opt/apps/staging/Docubot/.git" ]; then
+              echo "Directory not found or missing .git. Setting up repository..."
+              mkdir -p /opt/apps/staging
+              cd /opt/apps/staging
+              git clone https://github.com/Amenawajiha/docubot.git Docubot
+            fi
+
+            # 2. Pull latest changes
             cd /opt/apps/staging/Docubot
             git pull origin main
-            docker-compose up -d --build
-            # or for node apps: npm ci && pm2 restart docubot
+
+            # 3. Build & start containers using Docker Compose v2 syntax
+            docker compose up -d --build
