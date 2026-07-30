@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "my-work1-branch" ]
+    branches: [ "main" , "my-work1-branch" ]
   pull_request:
     branches: [ "main" ]
 env: 
