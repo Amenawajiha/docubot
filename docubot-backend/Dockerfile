@@ -40,8 +40,10 @@ COPY --from=builder /opt/venv /opt/venv
 COPY src /app/src
 COPY alembic /app/alembic
 COPY alembic.ini /app/alembic.ini
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 
-RUN chown -R appuser:appgroup /app
+RUN chmod +x /app/docker-entrypoint.sh && \
+    chown -R appuser:appgroup /app
 
 USER appuser
 
@@ -50,4 +52,4 @@ EXPOSE 8001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:8001/health || exit 1
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

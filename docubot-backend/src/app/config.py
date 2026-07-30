@@ -122,7 +122,16 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins(self) -> list[str]:
-        return [self.frontend_url]
+        origins = [
+            self.frontend_url,
+            "http://localhost:3000",
+            "http://localhost:8091",
+            "http://localhost:8001",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:8091",
+            "http://127.0.0.1:8001",
+        ]
+        return list(dict.fromkeys(origins))
 
     @property
     def google_redirect_uri(self) -> str:

@@ -67,6 +67,11 @@ class RateLimitMiddleware:
             await self.app(scope, receive, send)
             return
 
+        # CORS preflight OPTIONS requests — never rate limit or block them
+        if scope_type == "http" and scope.get("method") == "OPTIONS":
+            await self.app(scope, receive, send)
+            return
+
         # Build a minimal HTTPConnection object for identifier extraction
         request = HTTPConnection(scope, receive)
         zone    = resolve_zone(request)
