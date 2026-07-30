@@ -1,0 +1,28 @@
+name: Deploy via SSH
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: SSH and Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            cd /opt/apps/staging/Docubot
+            git pull origin main
+            docker-compose up -d --build
+            # or for node apps: npm ci && pm2 restart docubot
