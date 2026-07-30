@@ -1,0 +1,148 @@
+name: docubot-platform-dev
+
+services:
+  frontend:
+    build:
+      context: ./docubot-frontend
+      dockerfile: Dockerfile
+    container_name: docubot-frontend-dev
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001/api/v1}
+      NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://localhost:8001}
+    networks:
+      - dev-network
+
+  backend:
+    build:
+      context: ./docubot-backend
+      dockerfile: Dockerfile
+    container_name: docubot-backend-dev
+    ports:
+      - "${BACKEND_PORT:-8001}:8001"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
+      LOG_FORMAT: ${LOG_FORMAT:-console}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-docubot}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-docubot}}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-http://minio:9000}
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-docubot-documents}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev_jwt_secret_key_for_local_testing_only_32bytes}
+      APP_SECRET_KEY: ${APP_SECRET_KEY:-dev_app_secret_key_for_local_testing_only_32bytes}
+      FERNET_KEY: ${FERNET_KEY:-YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE=}
+      CHATBOT_RAG_URL: ${CHATBOT_RAG_URL:-http://host.docker.internal:8000}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-local_development_internal_api_key}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      minio:
+        condition: service_healthy
+    networks:
+      - dev-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: docubot-postgres-dev
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-docubot}
+      POSTGRES_USER: ${POSTGRES_USER:-docubot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-docubot}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: docubot-redis-dev
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: docubot-minio-dev
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    command: server /data --console-address ":9001"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_dev_data:/data
+    networks:
+      - dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  qdrant:
+    image: qdrant/qdrant:v1.17.1
+    container_name: docubot-qdrant-dev
+    ports:
+      - "${QDRANT_PORT:-6333}:6333"
+      - "${QDRANT_GRPC_PORT:-6334}:6334"
+    volumes:
+      - qdrant_dev_storage:/qdrant/storage
+    networks:
+      - dev-network
+
+volumes:
+  postgres_dev_data:
+    external: true
+    name: "80b7706c3be32a9027db2f05088d4257fc6b0bec85c7c7c405854fe3e4cb22f7"
+  minio_dev_data:
+    external: true
+    name: "7781725fe1549d6a3fe291be6042307ac565715c42b1bd0139b5f11aa51b9d3a"
+  qdrant_dev_storage:
+    external: true
+    name: "qdrant_storage"
+  redis_dev_data:
+
+networks:
+  dev-network:
+    driver: bridge

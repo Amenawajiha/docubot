@@ -1,0 +1,14 @@
+.venv
+__pycache__
+.pytest_cache
+.git
+.gitignore
+.env
+server.log
+tests
+playground_implementation.md
+*.pyc
+*.pyo
+*.pyd
+.vscode
+.agents

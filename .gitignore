@@ -1,9 +1,12 @@
 # Ignore all root-level directories and files
 /*
 
-# Allow backend, frontend, and this gitignore file
+# Allow backend, frontend, deployment files, and this gitignore file
 !/docubot-backend/
 !/docubot-frontend/
+!/docker-compose*.yml
+!/nginx/
+!/.env.example
 !.gitignore
 
 # Frontend ignores
