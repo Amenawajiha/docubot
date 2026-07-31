@@ -44,8 +44,6 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    app.add_middleware(RateLimitMiddleware)
-
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -53,6 +51,8 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # app.add_middleware(RateLimitMiddleware)
 
     @app.exception_handler(AppException)
     async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:

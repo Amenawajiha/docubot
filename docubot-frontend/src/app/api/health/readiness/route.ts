@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const backendUrl =
+  const rawBackendUrl =
+    process.env.INTERNAL_BACKEND_URL ||
     process.env.NEXT_PUBLIC_BACKEND_URL ||
     process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/v1\/?$/, "") ||
-    "http://127.0.0.1:8001";
+    "http://localhost:8001";
+  
+  // Force 127.0.0.1 on the server side to avoid Node.js IPv6 resolving issues
+  const backendUrl = rawBackendUrl.replace("localhost", "127.0.0.1");
 
   let backendStatus: "up" | "down" = "down";
 

@@ -6,9 +6,9 @@ services:
       context: ./docubot-frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://127.0.0.1:8001/api/v1}
-        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://127.0.0.1:8001}
-    container_name: docubot-frontend-dev
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001/api/v1}
+        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://localhost:8001}
+    # container_name: docubot-frontend-dev (Namespaced by COMPOSE_PROJECT_NAME)
     restart: always
     ports:
       - "${FRONTEND_PORT:-8091}:3000"
@@ -17,8 +17,8 @@ services:
         required: false
     environment:
       NODE_ENV: ${NODE_ENV:-development}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://127.0.0.1:8001/api/v1}
-      NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://127.0.0.1:8001}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001/api/v1}
+      NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://localhost:8001}
     networks:
       - dev-network
 
@@ -26,7 +26,7 @@ services:
     build:
       context: ./docubot-backend
       dockerfile: Dockerfile
-    container_name: docubot-backend-dev
+    # container_name: docubot-backend-dev (Namespaced by COMPOSE_PROJECT_NAME)
     restart: always
     ports:
       - "${BACKEND_PORT:-8001}:8001"
@@ -39,6 +39,8 @@ services:
       LOG_FORMAT: ${LOG_FORMAT:-console}
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-docubot}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-docubot}}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CELERY_BROKER_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${REDIS_URL:-redis://redis:6379/1}
       QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
       S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-http://minio:9000}
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
@@ -49,7 +51,8 @@ services:
       FERNET_KEY: ${FERNET_KEY:-YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE=}
       CHATBOT_RAG_URL: ${CHATBOT_RAG_URL:-http://host.docker.internal:8000}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-local_development_internal_api_key}
-      CORS_ORIGINS: ${CORS_ORIGINS:-'["http://localhost:3000", "http://localhost:8091", "http://localhost:8001"]'}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      BACKEND_URL: ${BACKEND_URL:-http://localhost:8001}
       MAIL_USERNAME: ${MAIL_USERNAME:-amenawajiha2004@gmail.com}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-hcfqsbvxxmkzqdrb}
       MAIL_FROM: ${MAIL_FROM:-amenawajiha2004@gmail.com}
@@ -73,7 +76,7 @@ services:
 
   postgres:
     image: postgres:15-alpine
-    container_name: docubot-postgres-dev
+    # container_name: docubot-postgres-dev (Namespaced by COMPOSE_PROJECT_NAME)
     restart: always
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
@@ -85,7 +88,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-docubot}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
     volumes:
-      - postgres_dev_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - dev-network
     healthcheck:
@@ -97,12 +100,12 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: docubot-redis-dev
+    # container_name: docubot-redis-dev (Namespaced by COMPOSE_PROJECT_NAME)
     restart: always
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
-      - redis_dev_data:/data
+      - redis_data:/data
     networks:
       - dev-network
     healthcheck:
@@ -113,7 +116,7 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: docubot-minio-dev
+    # container_name: docubot-minio-dev (Namespaced by COMPOSE_PROJECT_NAME)
     restart: always
     ports:
       - "${MINIO_PORT:-9000}:9000"
@@ -126,7 +129,7 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     volumes:
-      - minio_dev_data:/data
+      - minio_data:/data
     networks:
       - dev-network
     healthcheck:
@@ -138,21 +141,21 @@ services:
 
   qdrant:
     image: qdrant/qdrant:v1.17.1
-    container_name: docubot-qdrant-dev
+    # container_name: docubot-qdrant-dev (Namespaced by COMPOSE_PROJECT_NAME)
     restart: always
     ports:
       - "${QDRANT_PORT:-6333}:6333"
       - "${QDRANT_GRPC_PORT:-6334}:6334"
     volumes:
-      - qdrant_dev_storage:/qdrant/storage
+      - qdrant_storage:/qdrant/storage
     networks:
       - dev-network
 
 volumes:
-  postgres_dev_data:
-  minio_dev_data:
-  qdrant_dev_storage:
-  redis_dev_data:
+  postgres_data:
+  minio_data:
+  qdrant_storage:
+  redis_data:
 
 networks:
   dev-network:

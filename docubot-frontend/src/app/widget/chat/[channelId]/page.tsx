@@ -114,7 +114,7 @@ export default function ChatWidgetPage({ params }: { params: Promise<{ channelId
       }
 
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8001';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
         const res = await fetch(`${backendUrl}/api/v1/chatbot/${workspaceSlug}/${chatbotId}/session`, {
           method: 'POST',
           headers: {
@@ -165,7 +165,7 @@ export default function ChatWidgetPage({ params }: { params: Promise<{ channelId
   useEffect(() => {
     if (!sessionToken || !workspaceSlug || !chatbotId) return;
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8001';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
     const wsUrl = backendUrl.replace(/^http/, 'ws') + `/api/v1/chatbot/${workspaceSlug}/${chatbotId}/chat?token=${sessionToken}`;
     
     const ws = new WebSocket(wsUrl);
