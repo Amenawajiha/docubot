@@ -25,6 +25,12 @@ from app.utils.exceptions import AppException
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Startup: engine is created lazily on first request — nothing to do here.
+    try:
+        from app.infrastructure.storage.s3_client import ensure_bucket_exists
+        await ensure_bucket_exists()
+    except Exception as e:
+        import logging
+        logging.error(f"Failed to ensure S3 bucket exists: {e}")
     yield
     # Shutdown: dispose the connection pool only if it was ever initialised.
     engine = database.get_engine_or_none()

@@ -63,6 +63,7 @@ class Settings(BaseSettings):
 
     # ── S3 / MinIO ────────────────────────────────────────────────────────────
     s3_endpoint_url: str = ""
+    s3_external_endpoint_url: str = ""
     s3_access_key: str = ""
     s3_secret_key: str = ""
     s3_bucket_name: str = "docubot-files"
@@ -129,7 +130,6 @@ class Settings(BaseSettings):
             "http://localhost:8001",
             "http://127.0.0.1:3000",
             "http://127.0.0.1:8091",
-            "http://localhost:8001",
         ]
         return list(dict.fromkeys(origins))
 

@@ -50,10 +50,14 @@ class InternalService:
         Validate the X-Internal-API-Key header value.
         Called by the internal dependency on every internal request.
         """
+        from app.config import settings
         if raw_key == "local_development_internal_api_key":
-            from app.config import settings
             if settings.is_development:
                 return
+
+        # Fallback to the environment variable if present (useful for QA/Staging where DB isn't seeded)
+        if settings.internal_api_key and raw_key == settings.internal_api_key:
+            return
 
         prefix = raw_key[:12]
         key_row = await self.key_repo.get_by_prefix(prefix)

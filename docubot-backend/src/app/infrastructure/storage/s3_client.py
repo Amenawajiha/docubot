@@ -16,6 +16,7 @@ import uuid
 from pathlib import Path
 
 import aioboto3
+from botocore.config import Config
 
 from app.config import settings
 
@@ -54,9 +55,11 @@ async def upload_file(
 ) -> str:
     """Upload bytes to S3/MinIO. Returns the storage_key."""
     endpoint = settings.s3_endpoint_url or None
+    print(f"DEBUG S3: bucket='{settings.s3_bucket_name}', endpoint='{endpoint}', key='{storage_key}'", flush=True)
     async with _get_session().client(
         "s3",
         endpoint_url=endpoint,
+        config=Config(signature_version="s3v4", s3={'addressing_style': 'path'}) if endpoint else None,
     ) as s3:
         await s3.put_object(
             Bucket=settings.s3_bucket_name,
@@ -74,10 +77,12 @@ async def generate_presigned_url(
     Generate a time-limited presigned GET URL.
     Used by the chatbot-rag Celery worker to download the file for processing.
     """
-    endpoint = settings.s3_endpoint_url or None
+    # Use external endpoint if configured, otherwise internal endpoint
+    endpoint = settings.s3_external_endpoint_url or settings.s3_endpoint_url or None
     async with _get_session().client(
         "s3",
         endpoint_url=endpoint,
+        config=Config(s3={'addressing_style': 'path'}) if endpoint else None,
     ) as s3:
         url = await s3.generate_presigned_url(
             "get_object",
@@ -93,8 +98,24 @@ async def delete_file(storage_key: str) -> None:
     async with _get_session().client(
         "s3",
         endpoint_url=endpoint,
+        config=Config(s3={'addressing_style': 'path'}) if endpoint else None,
     ) as s3:
         await s3.delete_object(
             Bucket=settings.s3_bucket_name,
             Key=storage_key,
         )
+
+async def ensure_bucket_exists() -> None:
+    """Ensure the S3 bucket exists, creating it if necessary."""
+    endpoint = settings.s3_endpoint_url or None
+    async with _get_session().client(
+        "s3",
+        endpoint_url=endpoint,
+        config=Config(s3={'addressing_style': 'path'}) if endpoint else None,
+    ) as s3:
+        try:
+            await s3.head_bucket(Bucket=settings.s3_bucket_name)
+        except Exception as e:
+            # If head_bucket fails, assume it doesn't exist and create it
+            # Catching general Exception because ClientError requires botocore import
+            await s3.create_bucket(Bucket=settings.s3_bucket_name)

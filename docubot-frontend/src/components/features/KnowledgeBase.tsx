@@ -117,13 +117,20 @@ export default function KnowledgeBase() {
       formData.append("file", file);
       
       try {
-        await fetchApi(`/workspaces/${workspaceId}/chatbots/${currentChatbot.id}/upload`, {
+        const response = await fetchApi(`/workspaces/${workspaceId}/chatbots/${currentChatbot.id}/upload`, {
           method: "POST",
           body: formData
         });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || `Upload failed with status ${response.status}`);
+        }
+        
         showToast(`Uploaded ${file.name} successfully!`);
       } catch (err) {
         console.error(`Failed to upload ${file.name}`, err);
+        alert(`Failed to upload ${file.name}: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
     
