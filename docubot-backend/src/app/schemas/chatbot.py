@@ -65,6 +65,8 @@ class ChatbotUpdate(BaseModel):
     """All fields optional — PATCH semantics."""
     name: str | None = Field(default=None, min_length=1, max_length=255)
     brand_color: str | None = Field(default=None, max_length=7)
+    deployment_status: DeployStatus | None = None
+    is_active: bool | None = None
     llm_provider: LlmProvider | None = None
     llm_model: str | None = Field(default=None, max_length=100)
     custom_api_key: str | None = None
@@ -97,6 +99,7 @@ class ChatbotOut(BaseModel):
     llm_provider: str
     llm_model: str
     has_custom_api_key: bool        # true/false — never expose the key itself
+    custom_api_key_masked: str | None = None
     tone_preset: str
     custom_system_prompt: str | None
     default_language: str

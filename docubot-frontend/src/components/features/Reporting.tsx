@@ -60,7 +60,7 @@ export default function Reporting() {
     if (!workspaceId) return;
 
     try {
-      let url = `/workspaces/${workspaceId}/analytics?days=${days}`;
+      let url = `/workspaces/${workspaceId}/metrics?days=${days}`;
       if (currentChatbot?.id) {
         url += `&chatbot_id=${currentChatbot.id}`;
       }
@@ -81,21 +81,21 @@ export default function Reporting() {
   // Derived metrics
   const summary = analyticsData?.summary;
 
-  const totalConvs = summary?.total_messages != null && summary.total_messages > 0
-    ? summary.total_messages.toLocaleString()
-    : "4,050";
+  const totalConvs = summary?.total_sessions != null
+    ? summary.total_sessions.toLocaleString()
+    : "0";
 
   const resRate = summary?.resolution_rate != null
     ? `${(summary.resolution_rate * 100).toFixed(1)}%`
-    : "89.3%";
+    : "0.0%";
 
   const avgSat = summary?.avg_confidence != null
     ? `${Math.round(summary.avg_confidence * 100)}%`
-    : "91%";
+    : "0%";
 
   const escHuman = summary?.clarification_rate != null
     ? `${(summary.clarification_rate * 100).toFixed(1)}%`
-    : "10.7%";
+    : "0.0%";
 
   // Derived daily conv chart data
   const chartConvData = (analyticsData?.daily_metrics && analyticsData.daily_metrics.length > 0)
@@ -115,9 +115,9 @@ export default function Reporting() {
     ? analyticsData.top_questions.map((item) => ({
         q: item.content,
         count: item.count,
-        resolved: item.avg_confidence != null ? `${Math.round(item.avg_confidence * 100)}%` : "95%",
+        resolved: item.avg_confidence != null ? `${Math.round(item.avg_confidence * 100)}%` : "0%",
       }))
-    : defaultTopQuestions;
+    : [];
 
   const handleExport = () => {
     const csvRows = [

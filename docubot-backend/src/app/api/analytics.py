@@ -9,7 +9,7 @@ from app.api.dependencies import DbSession, VerifiedUser
 from app.core.analytics.service import AnalyticsService
 from app.schemas.analytics import AnalyticsDashboard
 
-router = APIRouter(prefix="/workspaces/{workspace_id}/analytics", tags=["analytics"])
+router = APIRouter(prefix="/workspaces/{workspace_id}/metrics", tags=["analytics"])
 
 
 @router.get(

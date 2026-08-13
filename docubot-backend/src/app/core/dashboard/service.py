@@ -61,7 +61,7 @@ class DashboardService:
 
         (
             (active_bots, total_bots),
-            (total_conversations, satisfaction_rate),
+            (total_conversations, satisfaction_rate, avg_response_time),
             total_documents,
             has_deployments,
         ) = await asyncio.gather(
@@ -92,6 +92,7 @@ class DashboardService:
             total_conversations=total_conversations,
             satisfaction_rate=satisfaction_rate,
             total_documents=total_documents,
+            avg_response_time=avg_response_time,
         )
 
         return DashboardOut(
@@ -122,9 +123,9 @@ class DashboardService:
 
     async def _get_conversation_stats(
         self, workspace_id: uuid.UUID
-    ) -> tuple[int, float | None]:
+    ) -> tuple[int, float | None, str | None]:
         """
-        Return (total_sessions, avg_confidence) aggregated across all time
+        Return (total_sessions, avg_confidence, avg_response_time) aggregated across all time
         and all chatbots in this workspace.
 
         Source: analytics_daily rollup — owned by the analytics domain.
@@ -134,6 +135,7 @@ class DashboardService:
             select(
                 func.coalesce(func.sum(AnalyticsDaily.total_sessions), 0).label("sessions"),
                 func.avg(AnalyticsDaily.avg_confidence).label("confidence"),
+                func.avg(AnalyticsDaily.avg_response_time_ms).label("response_time"),
             ).where(
                 AnalyticsDaily.workspace_id == workspace_id,
             )
@@ -141,7 +143,13 @@ class DashboardService:
         row = result.one()
         sessions    = int(row.sessions)
         confidence  = float(row.confidence) if row.confidence else None
-        return sessions, confidence
+        
+        response_time = None
+        if row.response_time:
+            # Format to seconds with 1 decimal place (e.g. 1.2s)
+            response_time = f"{float(row.response_time) / 1000:.1f}s"
+            
+        return sessions, confidence, response_time
 
     async def _count_completed_documents(self, workspace_id: uuid.UUID) -> int:
         """

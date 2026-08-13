@@ -23,6 +23,7 @@ class DashboardMetricsOut(BaseModel):
     total_conversations: int
     satisfaction_rate: float | None
     total_documents: int
+    avg_response_time: str | None = None
 
 
 class DashboardChecklistOut(BaseModel):

@@ -22,6 +22,26 @@ from app.data import database
 from app.middleware.rate_limit_middleware import RateLimitMiddleware
 from app.utils.exceptions import AppException
 
+import asyncio
+
+async def _purge_task():
+    from app.core.chatbot.service import purge_expired_chatbots
+    from app.data.database import async_session_maker
+    import logging
+    while True:
+        try:
+            # Run once a day
+            await asyncio.sleep(60) # Run every minute for testing
+            async with async_session_maker() as session:
+                deleted = await purge_expired_chatbots(session)
+                if deleted > 0:
+                    logging.info(f"Purged {deleted} expired chatbots.")
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logging.error(f"Error purging expired chatbots: {e}")
+            await asyncio.sleep(3600) # Retry later if error
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Startup: engine is created lazily on first request — nothing to do here.
@@ -31,8 +51,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     except Exception as e:
         import logging
         logging.error(f"Failed to ensure S3 bucket exists: {e}")
+        
+    purge_task_handle = asyncio.create_task(_purge_task())
+        
     yield
     # Shutdown: dispose the connection pool only if it was ever initialised.
+    purge_task_handle.cancel()
+    
     engine = database.get_engine_or_none()
     if engine is not None:
         await engine.dispose()

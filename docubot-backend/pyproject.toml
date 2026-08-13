@@ -32,6 +32,8 @@ dependencies = [
     "dnspython>=2.6.0",
     # OAuth (Google + GitHub)
     "authlib>=1.3.0",
+    "google-auth>=2.20.0",
+    "requests>=2.31.0",
     "httpx>=0.27.0",
     "aioboto3>=12.0.0",
     "celery>=5.3.0",

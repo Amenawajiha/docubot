@@ -33,7 +33,13 @@ from app.schemas.chat import (
     SessionEndedOut,
     SessionOut,
 )
-from app.utils.exceptions import BadRequestError, ForbiddenError, NotFoundError
+from app.utils.exceptions import (
+    BadRequestError,
+    BotOfflineError,
+    ForbiddenError,
+    NotFoundError,
+    UnauthorizedError,
+)
 from app.utils.security import generate_secure_token, token_expiry
 
 SESSION_TTL_HOURS = 4
@@ -65,20 +71,58 @@ class ChatSessionService:
         if not chatbot:
             raise NotFoundError("Chatbot")
         if not chatbot.is_active or chatbot.deployment_status != "published":
-            raise BadRequestError("This chatbot is not currently available.")
+            raise BotOfflineError()
 
         token = generate_secure_token(64)
         expires = token_expiry(hours=SESSION_TTL_HOURS)
 
-        session = await self.ses_repo.create(
-            workspace_id=workspace.id,
-            chatbot_id=chatbot_id,
-            end_user_id=data.end_user_id,
-            session_token=token,
-            session_token_expires_at=expires,
-            expires_at=expires,
-            metadata_=data.metadata,
-        )
+        session = None
+        if data.existing_session_id:
+            existing = await self.ses_repo.get_by_id(data.existing_session_id)
+            if (
+                existing
+                and existing.workspace_id == workspace.id
+                and existing.chatbot_id == chatbot_id
+                and existing.session_status == "active"
+                and existing.expires_at.replace(tzinfo=timezone.utc) >= _utcnow()
+            ):
+                # Calculate how long ago the token was issued by comparing expiries
+                old_expiry = existing.session_token_expires_at.replace(tzinfo=timezone.utc)
+                age_seconds = (expires - old_expiry).total_seconds()
+
+                # ROTATION THRESHOLD: 300 seconds (5 minutes)
+                if age_seconds > 300:
+                    session = await self.ses_repo.update(
+                        existing,
+                        session_token=token,
+                        session_token_expires_at=expires,
+                        expires_at=expires,
+                    )
+                else:
+                    session = await self.ses_repo.update(
+                        existing,
+                        expires_at=expires,
+                    )
+
+        if not session:
+            session = await self.ses_repo.create(
+                workspace_id=workspace.id,
+                chatbot_id=chatbot_id,
+                end_user_id=data.end_user_id,
+                session_token=token,
+                session_token_expires_at=expires,
+                expires_at=expires,
+                metadata_=data.metadata,
+            )
+
+            from app.core.analytics.service import AnalyticsService
+            await AnalyticsService(self.db).record_chat_event(
+                workspace_id=workspace.id,
+                chatbot_id=chatbot_id,
+                session_id=session.id,
+                event_type="session_started",
+                end_user_id=data.end_user_id
+            )
 
         session_out = SessionOut.model_validate(session)
         session_out.welcome_message = chatbot.welcome_message
@@ -122,6 +166,16 @@ class ChatSessionService:
         session_out.welcome_message = chatbot.welcome_message
         session_out.brand_color = chatbot.brand_color
         session_out.chatbot_name = chatbot.name
+
+        from app.core.analytics.service import AnalyticsService
+        await AnalyticsService(self.db).record_chat_event(
+            workspace_id=workspace_id,
+            chatbot_id=chatbot_id,
+            session_id=session.id,
+            event_type="session_started",
+            end_user_id=end_user_id
+        )
+
         return session_out
 
         
@@ -131,18 +185,24 @@ class ChatSessionService:
         """
         Validate a session token.
         Called on every WebSocket message and REST request from end-users.
-        Raises 401 / 403 on invalid, expired, or ended sessions.
+        Raises 401 on invalid, expired, or ended sessions.
         """
-        from app.utils.exceptions import UnauthorizedError
         session = await self.ses_repo.get_by_token(token)
         if not session:
             raise UnauthorizedError("Invalid session token.")
         if session.session_status != "active":
-            raise ForbiddenError("This session has ended.")
+            raise UnauthorizedError("This session has ended.")
+            
+        chatbot = await self.bot_repo.get_by_id(session.chatbot_id)
+        if not chatbot or not chatbot.is_active or chatbot.deployment_status != "published":
+            # Allow playground usage which has 'playground-' prefix in end_user_id
+            if not session.end_user_id or not session.end_user_id.startswith("playground-"):
+                raise BotOfflineError()
+            
         now = _utcnow()
         if session.expires_at.replace(tzinfo=timezone.utc) < now:
             await self.ses_repo.update(session, session_status="expired")
-            raise ForbiddenError("Session has expired. Please start a new chat.")
+            raise UnauthorizedError("Session has expired. Please start a new chat.")
         return session
 
     # ── Get message history ───────────────────────────────────────────────────

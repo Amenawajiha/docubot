@@ -44,6 +44,14 @@ class UnprocessableError(AppException):
         )
 
 
+class BotOfflineError(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error_code": "BOT_OFFLINE", "message": "Bot is offline"}
+        )
+
+
 class RateLimitError(AppException):
     def __init__(self, detail: str = "Rate limit exceeded.") -> None:
         super().__init__(

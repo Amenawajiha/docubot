@@ -30,6 +30,10 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
 
+class GoogleVerifyRequest(BaseModel):
+    credential: str
+
+
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 

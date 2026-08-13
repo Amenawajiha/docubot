@@ -57,7 +57,7 @@
         width: 60px;
         height: 60px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+        background: ${config.brandColor || config.brand_color || '#0052ff'};
         box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4);
         cursor: pointer;
         display: flex;
@@ -188,6 +188,9 @@
     // Create Floating Launcher Button
     const launcher = document.createElement('div');
     launcher.className = `docubot-launcher ${mergedConfig.position === 'bottom-left' ? 'launcher-left' : ''}`;
+    if (mergedConfig.brandColor || mergedConfig.brand_color || config.brand_color || config.brandColor) {
+      launcher.style.background = mergedConfig.brandColor || mergedConfig.brand_color || config.brand_color || config.brandColor;
+    }
     
     // Bubble Chat Icon SVG
     const chatIcon = `
@@ -257,10 +260,14 @@
 
     launcher.addEventListener('click', toggleChat);
 
-    // Listen for events from the iframe (e.g. close requests)
+    // Listen for events from the iframe (e.g. close requests, brand color sync)
     window.addEventListener('message', function (event) {
       if (event.data && event.data.type === 'docubot-close') {
         if (isOpen) toggleChat();
+      }
+      if (event.data && event.data.type === 'docubot-brand-color' && event.data.color) {
+        launcher.style.background = event.data.color;
+        launcher.style.backgroundColor = event.data.color;
       }
     });
   }

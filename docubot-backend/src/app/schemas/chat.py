@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 class CreateSessionRequest(BaseModel):
     # Caller-supplied opaque identifier (email, phone, uuid, or null for anon)
     end_user_id: str | None = Field(default=None, max_length=255)
+    existing_session_id: uuid.UUID | None = Field(default=None, description="Non-sensitive identifier of an existing active session to restore.")
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 

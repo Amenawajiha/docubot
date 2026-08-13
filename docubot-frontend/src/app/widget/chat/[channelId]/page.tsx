@@ -84,7 +84,7 @@ export default function ChatWidgetPage({ params }: { params: Promise<{ channelId
     }
     return 'light';
   });
-  const [errorState, setErrorState] = useState<{ type: 403 | 429 | 500; message: string } | null>(null);
+  const [errorState, setErrorState] = useState<{ type: 400 | 403 | 429 | 500; message: string } | null>(null);
   const [brandColor, setBrandColor] = useState('#0052ff');
   const [chatbotName, setChatbotName] = useState('DocuBot Assistant');
 
@@ -115,13 +115,16 @@ export default function ChatWidgetPage({ params }: { params: Promise<{ channelId
 
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
+        const storageKey = `docubot_session_id_${workspaceSlug}_${chatbotId}`;
+        const existingSessionId = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null;
+
         const res = await fetch(`${backendUrl}/api/v1/chatbot/${workspaceSlug}/${chatbotId}/session`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-Simulated-Origin': parentOrigin,
           },
-          body: JSON.stringify({}),
+          body: JSON.stringify({ existing_session_id: existingSessionId || undefined }),
         });
 
         if (res.status === 403) {
@@ -130,27 +133,72 @@ export default function ChatWidgetPage({ params }: { params: Promise<{ channelId
           return;
         }
 
+        if (res.status === 400) {
+          const errorData = await res.json();
+          const detail = errorData.detail;
+          const isOffline = 
+            errorData.error_code === "BOT_OFFLINE" || 
+            (detail && typeof detail === 'object' && detail.error_code === "BOT_OFFLINE") ||
+            (typeof detail === 'string' && (detail.includes("Bot is offline") || detail.includes("not currently available")));
+
+          if (isOffline) {
+            setErrorState({ type: 400, message: 'Bot is offline' });
+            return;
+          }
+        }
+
         if (!res.ok) throw new Error('Failed to create session');
         
         const data = await res.json();
+        if (typeof window !== 'undefined' && data.id) {
+          localStorage.setItem(storageKey, data.id);
+        }
         setSessionToken(data.session_token);
         
         if (data.brand_color) {
           setBrandColor(data.brand_color);
+          if (typeof window !== 'undefined' && window.parent) {
+            window.parent.postMessage({ type: 'docubot-brand-color', color: data.brand_color }, '*');
+          }
         }
         if (data.chatbot_name) {
           setChatbotName(data.chatbot_name);
         }
 
-        // Initial welcome message
-        setMessages([
-          {
-            id: 'welcome',
-            role: 'assistant',
-            content: data.welcome_message || 'Hello! I am your **DocuBot** assistant. How can I help you today?',
-            timestamp: new Date(),
-          },
-        ]);
+        let loadedHistory = false;
+        try {
+          const historyRes = await fetch(`${backendUrl}/api/v1/chatbot/${workspaceSlug}/${chatbotId}/session/${data.id}/messages?token=${data.session_token}&limit=50`, {
+            headers: { 'X-Simulated-Origin': parentOrigin },
+          });
+          if (historyRes.ok) {
+            const historyData = await historyRes.json();
+            if (historyData.messages && historyData.messages.length > 0) {
+              const formattedMessages: Message[] = historyData.messages.map((msg: any) => ({
+                id: msg.id || Math.random().toString(),
+                role: msg.role === 'user' ? 'user' : 'assistant',
+                content: msg.content || '',
+                timestamp: new Date(msg.created_at || Date.now()),
+                sources: Array.isArray(msg.sources) ? msg.sources : undefined,
+              }));
+              setMessages(formattedMessages);
+              loadedHistory = true;
+            }
+          }
+        } catch (historyErr) {
+          console.error("Failed to load history:", historyErr);
+        }
+
+        // Initial welcome message if no prior chat history exists
+        if (!loadedHistory) {
+          setMessages([
+            {
+              id: 'welcome',
+              role: 'assistant',
+              content: data.welcome_message || 'Hello! I am your **DocuBot** assistant. How can I help you today?',
+              timestamp: new Date(),
+            },
+          ]);
+        }
         
       } catch (err) {
         console.error("Session init error:", err);
@@ -281,12 +329,12 @@ export default function ChatWidgetPage({ params }: { params: Promise<{ channelId
         <div className="flex items-center space-x-2">
           {/* Pulsing Status Dot */}
           <div className="relative flex h-2.5 w-2.5">
-            <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${isConnected ? 'bg-emerald-300 animate-ping' : 'bg-amber-300'}`}></span>
-            <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isConnected ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+            <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${isConnected ? 'bg-emerald-300 animate-ping' : (errorState?.type === 400 ? 'bg-slate-400' : 'bg-amber-300')}`}></span>
+            <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isConnected ? 'bg-emerald-400' : (errorState?.type === 400 ? 'bg-slate-500' : 'bg-amber-400')}`}></span>
           </div>
           <div>
             <h3 className="text-sm font-semibold tracking-wide font-display">{chatbotName}</h3>
-            <p className={`text-[10px] font-medium ${isConnected ? 'text-emerald-200' : 'text-amber-200'}`}>{isConnected ? 'Online' : 'Connecting...'}</p>
+            <p className={`text-[10px] font-medium ${isConnected ? 'text-emerald-200' : (errorState?.type === 400 ? 'text-slate-300' : 'text-amber-200')}`}>{isConnected ? 'Online' : (errorState?.type === 400 ? 'Offline' : 'Connecting...')}</p>
           </div>
         </div>
         
@@ -301,7 +349,7 @@ export default function ChatWidgetPage({ params }: { params: Promise<{ channelId
       </div>
 
       {/* Security Whitelist Status Banner (Only visible if 403 or 429) */}
-      {errorState && (
+      {errorState && errorState.type !== 400 && (
         <div className={`flex items-start space-x-2 px-4 py-2.5 text-xs ${
           errorState.type === 403 
             ? 'bg-rose-50 text-rose-800 border-b border-rose-100 dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-900/50' 
@@ -311,9 +359,19 @@ export default function ChatWidgetPage({ params }: { params: Promise<{ channelId
           <div className="flex-1 font-medium">{errorState.message}</div>
         </div>
       )}
+      
+      {errorState?.type === 400 && (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-slate-500 space-y-3">
+          <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
+            <X size={24} className="text-slate-400" />
+          </div>
+          <p className="text-sm">This chatbot is currently offline or unpublished and cannot accept messages right now.</p>
+        </div>
+      )}
 
       {/* Messages Stream */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin">
+      {(!errorState || errorState.type !== 400) && (
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin">
         {messages.map((msg) => {
           const isUser = msg.role === 'user';
           return (
@@ -339,27 +397,6 @@ export default function ChatWidgetPage({ params }: { params: Promise<{ channelId
                 <FormattedMessage text={msg.content} />
               </div>
 
-              {/* Render clickable sources if available */}
-              {msg.sources && msg.sources.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2 justify-start max-w-full">
-                  {msg.sources.map((src, idx) => (
-                    <a
-                      key={idx}
-                      href={src.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all duration-200 ${
-                        theme === 'dark'
-                          ? 'bg-[#1C2541] border-slate-800 text-blue-400 hover:text-blue-300 hover:border-slate-700'
-                          : 'bg-white border-blue-100 text-blue-600 hover:text-blue-700 hover:border-blue-300 shadow-sm'
-                      }`}
-                    >
-                      <span>{src.title}</span>
-                      <ArrowUpRight size={10} />
-                    </a>
-                  ))}
-                </div>
-              )}
 
               {/* Timestamp */}
               <span className="text-[10px] text-slate-400 mt-1 px-1">
@@ -383,6 +420,7 @@ export default function ChatWidgetPage({ params }: { params: Promise<{ channelId
 
         <div ref={messagesEndRef} />
       </div>
+      )}
 
       {/* Input Box */}
       <form 
@@ -407,8 +445,8 @@ export default function ChatWidgetPage({ params }: { params: Promise<{ channelId
           <button
             type="submit"
             disabled={!input.trim() || isTyping || !isConnected}
-            style={!input.trim() || isTyping || !isConnected ? undefined : { backgroundColor: brandColor, backgroundImage: 'none' }}
-            className="p-2.5 rounded-xl text-white font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm bg-gradient-to-br from-blue-600 to-indigo-700"
+            style={{ backgroundColor: brandColor }}
+            className="p-2.5 rounded-xl text-white font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
           >
             <Send size={16} />
           </button>

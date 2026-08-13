@@ -78,6 +78,11 @@ class Settings(BaseSettings):
     # Chatbot-RAG service URL (used for health checks and direct API calls if needed)
     chatbot_rag_url: str = "http://localhost:8000"
 
+    # ── Chatbot Retention & Cleanup ───────────────────────────────────────────
+    # Number of days soft-deleted chatbots and their MinIO/Qdrant assets are
+    # preserved before being permanently hard-deleted by the background worker.
+    chatbot_retention_days: int = 1
+
     # ── Internal API ──────────────────────────────────────────────────────────
     # Shared secret this backend sends to chatbot-rag in X-Internal-API-Key
     # Must match the key configured in the chatbot-rag service
@@ -106,7 +111,6 @@ class Settings(BaseSettings):
 
     # ── OAuth — Google ────────────────────────────────────────────────────────
     google_client_id: str = ""
-    google_client_secret: str = ""
 
     # ── OAuth — GitHub ────────────────────────────────────────────────────────
     github_client_id: str = ""
@@ -133,10 +137,7 @@ class Settings(BaseSettings):
         ]
         return list(dict.fromkeys(origins))
 
-    @property
-    def google_redirect_uri(self) -> str:
-        """OAuth callback URI registered in Google Cloud Console."""
-        return f"{self.backend_url}/api/v1/auth/google/callback"
+
 
     @property
     def github_redirect_uri(self) -> str:

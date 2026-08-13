@@ -64,7 +64,7 @@ class AnalyticsEventRepository(BaseRepository[AnalyticsEvent]):
         """Return top user messages by frequency."""
         result = await self.session.execute(
             select(
-                AnalyticsEvent.event_data["content"].astext.label("content"),
+                AnalyticsEvent.event_data.op("->>")("content").label("content"),
                 func.count(AnalyticsEvent.id).label("count"),
                 func.avg(AnalyticsEvent.confidence_score).label("avg_confidence"),
             )

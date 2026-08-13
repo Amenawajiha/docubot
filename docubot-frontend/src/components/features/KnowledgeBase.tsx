@@ -11,6 +11,7 @@ import {
   Brain,
   X
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useWorkspace, FileItem } from "@/components/providers/Providers";
 import { fetchApi } from "@/lib/api";
 import { ProgressBar, Toast } from "@/components/ui/shared-dashboard";
@@ -43,6 +44,13 @@ export default function KnowledgeBase() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   const [toastVisible, setToastVisible] = useState(false);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("action") === "upload") {
+      setShowAddModal(true);
+    }
+  }, [searchParams]);
 
   const {
     workspaceId,

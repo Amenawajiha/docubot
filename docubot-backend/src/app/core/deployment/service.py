@@ -184,13 +184,13 @@ class DeploymentService:
         script_src = f"{settings.frontend_url}/widget.js"
 
         embed_script = (
-            f'<script \n'
-            f'        src="{script_src}" \n'
-            f'        data-chatbot-id="{chatbot_id}" \n'
-            f'        data-workspace="{workspace_slug}" \n'
-            f'        data-channel-id="{channel_id}" \n'
-            f'        async>\n'
-            f'    </script>'
+            f'<script\n'
+            f'  src="{script_src}"\n'
+            f'  data-chatbot-id="{chatbot_id}"\n'
+            f'  data-workspace="{workspace_slug}"\n'
+            f'  data-channel-id="{channel_id}"\n'
+            f'  async>\n'
+            f'</script>'
         )
         embed_div = (
             f'<div id="docubot-chat-{chatbot_id}"></div>'

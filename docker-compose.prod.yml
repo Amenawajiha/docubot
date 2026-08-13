@@ -1,0 +1,180 @@
+name: docubot-platform
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: docubot-nginx-prod
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-8095}:8095"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - frontend-network
+
+  frontend:
+    build:
+      context: ./docubot-frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://synqdoc.com:8095/api/v1}
+        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://backend:8001}
+    container_name: docubot-frontend-prod
+    restart: unless-stopped
+    env_file:
+      - path: ./docubot-frontend/.env
+        required: false
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://synqdoc.com:8095/api/v1}
+      NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://backend:8001}
+    networks:
+      - frontend-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  backend:
+    build:
+      context: ./docubot-backend
+      dockerfile: Dockerfile
+    container_name: docubot-backend-prod
+    restart: unless-stopped
+    env_file:
+      - path: ./docubot-backend/.env
+        required: false
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-docubot}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-docubot}}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-http://minio:9000}
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-docubot-documents}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change_me_in_production_secret_key_32bytes}
+      APP_SECRET_KEY: ${APP_SECRET_KEY:-change_me_app_secret_key_32bytes}
+      FERNET_KEY: ${FERNET_KEY:-YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE=}
+      CHATBOT_RAG_URL: ${CHATBOT_RAG_URL:-http://host.docker.internal:8000}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-local_development_internal_api_key}
+      FRONTEND_URL: ${FRONTEND_URL:-https://synqdoc.com:8095}
+      BACKEND_URL: ${BACKEND_URL:-https://synqdoc.com:8095}
+      MAIL_USERNAME: ${MAIL_USERNAME:-amenawajiha2004@gmail.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-hcfqsbvxxmkzqdrb}
+      MAIL_FROM: ${MAIL_FROM:-amenawajiha2004@gmail.com}
+      MAIL_SERVER: ${MAIL_SERVER:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_STARTTLS: ${MAIL_STARTTLS:-true}
+      MAIL_SUPPRESS_SEND: ${MAIL_SUPPRESS_SEND:-false}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      minio:
+        condition: service_healthy
+    networks:
+      - frontend-network
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: docubot-postgres-prod
+    restart: unless-stopped
+    env_file:
+      - path: ./docubot-backend/.env
+        required: false
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-docubot}
+      POSTGRES_USER: ${POSTGRES_USER:-docubot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-docubot}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: docubot-redis-prod
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: docubot-minio-prod
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    env_file:
+      - path: ./docubot-backend/.env
+        required: false
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_data:/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  qdrant:
+    image: qdrant/qdrant:v1.17.1
+    container_name: docubot-qdrant-prod
+    restart: unless-stopped
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    networks:
+      - backend-network
+
+volumes:
+  postgres_data:
+  minio_data:
+  qdrant_storage:
+  redis_data:
+
+networks:
+  frontend-network:
+    driver: bridge
+  backend-network:
+    driver: bridge
+    internal: true

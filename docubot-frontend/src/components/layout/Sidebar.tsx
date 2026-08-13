@@ -239,7 +239,7 @@ export default function Sidebar() {
                 <span className="text-xs">What&apos;s New</span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-                AI Studio upgrades, faster document indexing, and new Slack deployment options.
+                Bot Studio upgrades, faster document indexing, and new Slack deployment options.
               </p>
               <div className="flex items-center space-x-3 pt-1">
                 <button

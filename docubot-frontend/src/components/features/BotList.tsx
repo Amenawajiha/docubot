@@ -97,21 +97,30 @@ export default function BotList() {
     }
   };
 
+  // Delete modal state
+  const [botToDelete, setBotToDelete] = useState<typeof chatbots[0] | null>(null);
+
   // Action: Soft-Delete Chatbot via DELETE API
-  const handleDeleteBot = async (bot: typeof chatbots[0]) => {
+  const handleDeleteBot = (bot: typeof chatbots[0]) => {
     if (!workspaceId) return;
-    if (!window.confirm(`Are you sure you want to delete "${bot.name}"?`)) return;
+    setBotToDelete(bot);
+  };
+
+  const confirmDeleteBot = async () => {
+    if (!workspaceId || !botToDelete) return;
 
     try {
-      const res = await fetchApi(`/workspaces/${workspaceId}/chatbots/${bot.id}`, {
+      const res = await fetchApi(`/workspaces/${workspaceId}/chatbots/${botToDelete.id}`, {
         method: "DELETE",
       });
       if (res.ok) {
-        setChatbots((prev) => prev.filter((b) => b.id !== bot.id));
+        setChatbots((prev) => prev.filter((b) => b.id !== botToDelete.id));
         showToast("Chatbot deleted");
       }
     } catch (err) {
       console.error("Failed to delete chatbot", err);
+    } finally {
+      setBotToDelete(null);
     }
   };
 
@@ -260,6 +269,42 @@ export default function BotList() {
       </div>
 
       <Toast message={toastMsg} visible={toastVisible} />
+      
+      {/* ── Strict Delete Confirmation Modal ── */}
+      {botToDelete && (
+        <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] animate-fadeIn p-4">
+          <div 
+            className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-white/10 w-full max-w-md overflow-hidden flex flex-col scale-in-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-6 pt-6 pb-4">
+              <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2 font-display">Delete Chatbot?</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                Are you sure you want to delete <strong>{botToDelete.name}</strong>?
+              </p>
+              
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/50 rounded-xl p-4 text-xs text-amber-800 dark:text-amber-200/90 leading-relaxed">
+                This chatbot, along with its knowledge documents and conversation logs, will be preserved in storage for <strong>30 days</strong>. During this retention window, the chatbot will be available for restoration before being permanently deleted from all storage systems.
+              </div>
+            </div>
+            
+            <div className="p-4 bg-slate-50/80 dark:bg-slate-800/50 border-t border-slate-100 dark:border-white/5 flex gap-3 justify-end">
+              <button 
+                onClick={() => setBotToDelete(null)}
+                className="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDeleteBot}
+                className="px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-rose-500 hover:bg-rose-600 transition-colors shadow-sm shadow-rose-500/20 cursor-pointer border-0"
+              >
+                Delete Chatbot
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

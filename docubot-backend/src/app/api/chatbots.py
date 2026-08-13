@@ -51,7 +51,7 @@ async def list_chatbots(
     workspace_id: uuid.UUID,
     user: VerifiedUser,
     session: DbSession,
-    include_archived: bool = Query(default=False),
+    include_archived: bool = Query(default=True),
 ) -> list[ChatbotListOut]:
     return await _svc(session).list_for_workspace(
         workspace_id, user, include_archived=include_archived

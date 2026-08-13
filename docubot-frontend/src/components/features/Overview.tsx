@@ -59,12 +59,32 @@ export default function Overview() {
   const [showTeammateAlert, setShowTeammateAlert] = useState(true);
 
   const fetchDashboard = useCallback(async () => {
-    await Promise.resolve();
     if (!workspaceId) return;
     try {
-      const res = await fetchApi(`/workspaces/${workspaceId}/dashboard`);
-      if (res.ok) {
-        const data: DashboardData = await res.json();
+      // Fetch both dashboard stats AND 7-day analytics concurrently
+      const [dashRes, analyticsRes] = await Promise.all([
+        fetchApi(`/workspaces/${workspaceId}/dashboard`),
+        fetchApi(`/workspaces/${workspaceId}/metrics?days=7`)
+      ]);
+
+      if (dashRes.ok) {
+        const data: DashboardData = await dashRes.json();
+        
+        // If analytics succeeded, map the daily_metrics to the weekly chart format
+        if (analyticsRes.ok) {
+          const analyticsData = await analyticsRes.json();
+          if (analyticsData.daily_metrics && analyticsData.daily_metrics.length > 0) {
+            data.weekly_conversations = analyticsData.daily_metrics.map((dm: any) => {
+              const d = new Date(dm.date);
+              return {
+                day: d.toLocaleDateString("en-US", { weekday: "short" }),
+                conversations: dm.total_messages || dm.total_sessions || 0,
+                resolved: Math.round((dm.total_messages || dm.total_sessions || 0) * (dm.resolution_rate || 0.9)),
+              };
+            });
+          }
+        }
+        
         setTimeout(() => setDashboardData(data), 0);
       }
     } catch (err) {
@@ -167,7 +187,7 @@ export default function Overview() {
         </div>
       </div>
 
-      {/* ── Alert Banners ── */}
+      {/* ── Alert Banners ──
       <div className="space-y-2">
         {showTeammateAlert && (
           <div className="flex items-center justify-between gap-4 px-4 py-2.5 bg-[#f0f5ff] dark:bg-blue-950/10 border border-[#0052ff]/10 rounded-xl text-xs">
@@ -231,7 +251,7 @@ export default function Overview() {
             </button>
           </div>
         )}
-      </div>
+      </div> */}
 
       {/* ── 4-column Metric Cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

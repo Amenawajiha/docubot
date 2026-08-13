@@ -116,6 +116,7 @@ class ChatbotService:
             "tone_preset", "custom_system_prompt", "default_language",
             "fallback_language", "widget_style", "welcome_message",
             "input_placeholder", "memory_mode", "auth_mode",
+            "deployment_status", "is_active",
         ]:
             val = getattr(data, field, None)
             if val is not None:
@@ -159,12 +160,47 @@ class ChatbotService:
             last_deployed_at=datetime.now(timezone.utc),
         )
 
+        from app.core.deployment.service import DeploymentService
+        from app.schemas.deployment import CreateChannelRequest
+        from app.config import settings
+        
+        ch_service = DeploymentService(self.session)
+        channels = await ch_service.ch_repo.list_for_chatbot(chatbot.id)
+        widget_channel = next((c for c in channels if c.channel_type == "widget"), None)
+        
+        if not widget_channel:
+            widget_channel = await ch_service.create_channel(
+                workspace_id,
+                chatbot.id,
+                CreateChannelRequest(
+                    channel_type="widget",
+                    channel_name="Web Widget",
+                    config={},
+                    allowed_domains=[]
+                ),
+                actor.id
+            )
+
+        ws = await self.ws_repo.get_by_id_active(workspace_id)
+        workspace_slug = ws.slug if ws else str(workspace_id)
+
+        script_src = f"{settings.frontend_url}/widget.js"
+        embed_script = (
+            f'<script\n'
+            f'  src="{script_src}"\n'
+            f'  data-chatbot-id="{chatbot_id}"\n'
+            f'  data-workspace="{workspace_slug}"\n'
+            f'  data-channel-id="{widget_channel.id}"\n'
+            f'  async>\n'
+            f'</script>'
+        )
+
         return ChatbotDeployResponse(
             id=chatbot.id,
             deployment_status=chatbot.deployment_status,
             is_active=chatbot.is_active,
             last_deployed_at=chatbot.last_deployed_at,
-            embed_snippet=_build_embed_snippet(chatbot.id),
+            embed_snippet=embed_script,
         )
 
     async def pause(
@@ -216,7 +252,21 @@ class ChatbotService:
 
 # ── Module-level helpers ──────────────────────────────────────────────────────
 
+def _mask_api_key(raw_key: str) -> str:
+    if len(raw_key) <= 8:
+        return "***"
+    return f"{raw_key[:4]}...{raw_key[-4:]}"
+
 def _to_out(c: Chatbot) -> ChatbotOut:
+    masked_key = None
+    if c.custom_api_key_encrypted:
+        from app.utils.security import decrypt_api_key
+        try:
+            raw_key = decrypt_api_key(c.custom_api_key_encrypted)
+            masked_key = _mask_api_key(raw_key)
+        except Exception:
+            masked_key = "***"
+
     return ChatbotOut(
         id=c.id,
         workspace_id=c.workspace_id,
@@ -225,6 +275,7 @@ def _to_out(c: Chatbot) -> ChatbotOut:
         llm_provider=c.llm_provider,
         llm_model=c.llm_model,
         has_custom_api_key=c.custom_api_key_encrypted is not None,
+        custom_api_key_masked=masked_key,
         tone_preset=c.tone_preset,
         custom_system_prompt=c.custom_system_prompt,
         default_language=c.default_language,
@@ -271,3 +322,59 @@ def _build_embed_snippet(chatbot_id: uuid.UUID) -> str:
         f'<script src="{settings.backend_url}/widget.js" '
         f'data-chatbot-id="{chatbot_id}" async></script>'
     )
+
+
+async def purge_expired_chatbots(session: AsyncSession) -> int:
+    """
+    Finds all soft-deleted chatbots where deleted_at < NOW - retention_days,
+    clears their Qdrant collections, deletes MinIO docs, and hard-deletes them from SQL.
+    """
+    import logging
+    from datetime import datetime, timezone, timedelta
+    from sqlalchemy import select
+    from app.config import settings
+    from app.data.models import Chatbot, ChatbotDocument
+    from app.infrastructure.storage.s3_client import delete_file
+    from app.infrastructure.queue.celery_app import celery_app, TASK_CLEAR_COLLECTION
+    from app.core.knowledge.service import collection_name
+
+    _log = logging.getLogger(__name__)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=settings.chatbot_retention_days)
+
+    # 1. Find expired chatbots
+    stmt = select(Chatbot).where(Chatbot.deleted_at <= cutoff)
+    result = await session.execute(stmt)
+    expired_bots = result.scalars().all()
+
+    deleted_count = 0
+    for bot in expired_bots:
+        _log.info(f"Purging expired chatbot: {bot.id} (soft-deleted at {bot.deleted_at})")
+
+        # 2. Delete all S3 files for this bot
+        docs_stmt = select(ChatbotDocument).where(ChatbotDocument.chatbot_id == bot.id)
+        docs_res = await session.execute(docs_stmt)
+        for doc in docs_res.scalars():
+            if doc.storage_key:
+                try:
+                    await delete_file(doc.storage_key)
+                except Exception as e:
+                    _log.warning(f"Failed to delete S3 file {doc.storage_key}: {e}")
+
+        # 3. Clear Qdrant collection
+        celery_app.send_task(
+            TASK_CLEAR_COLLECTION,
+            kwargs={
+                "workspace_id": str(bot.workspace_id),
+                "chatbot_id": str(bot.id),
+                "collection_name": collection_name(bot.workspace_id, bot.id),
+            },
+        )
+
+        # 4. Hard-delete from SQL
+        await session.delete(bot)
+        deleted_count += 1
+
+    if deleted_count > 0:
+        await session.commit()
+    
+    return deleted_count

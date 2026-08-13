@@ -196,8 +196,22 @@ class ChatbotService:
 
 # ── Serialisers ───────────────────────────────────────────────────────────────
 
+def _mask_api_key(raw_key: str) -> str:
+    if len(raw_key) <= 8:
+        return "***"
+    return f"{raw_key[:4]}...{raw_key[-4:]}"
+
 def _to_out(c: Chatbot) -> ChatbotOut:
     """Map ORM Chatbot → ChatbotOut (public summary, no tuning knobs)."""
+    masked_key = None
+    if c.custom_api_key_encrypted:
+        from app.utils.security import decrypt_api_key
+        try:
+            raw_key = decrypt_api_key(c.custom_api_key_encrypted)
+            masked_key = _mask_api_key(raw_key)
+        except Exception:
+            masked_key = "***"
+
     return ChatbotOut(
         id=c.id,
         workspace_id=c.workspace_id,
@@ -206,7 +220,9 @@ def _to_out(c: Chatbot) -> ChatbotOut:
         llm_provider=c.llm_provider,
         llm_model=c.llm_model,
         has_custom_api_key=c.custom_api_key_encrypted is not None,
+        custom_api_key_masked=masked_key,
         tone_preset=c.tone_preset,
+        custom_system_prompt=c.custom_system_prompt,
         default_language=c.default_language,
         fallback_language=c.fallback_language,
         widget_style=c.widget_style,

@@ -45,6 +45,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.core.billing.cost_calculator import calculate_cost
+from app.core.chat.session_service import ChatSessionService
 from app.data.repositories.chat_repo import (
     ChatMessageRepository,
     ChatSessionRepository,
@@ -158,6 +159,17 @@ class ChatEngine:
             },
         )
 
+        # 7b. Process conversation summarization and database history purging
+        if rag_response.get("was_summarized") and rag_response.get("summary_text"):
+            await self.msg_repo.purge_old_messages_for_session(session.id, keep_recent=10)
+            await self.msg_repo.insert_summary_message(
+                workspace_id=session.workspace_id,
+                chatbot_id=session.chatbot_id,
+                session_id=session.id,
+                end_user_id=session.end_user_id,
+                summary_text=rag_response["summary_text"],
+            )
+
         # 8. Update session stats
         await self.ses_repo.increment_message_count(
             session, tokens=tokens_in + tokens_out
@@ -169,6 +181,20 @@ class ChatEngine:
             model=chatbot.llm_model,
             tokens_input=tokens_in,
             tokens_output=tokens_out
+        )
+
+        from app.core.analytics.service import AnalyticsService
+        await AnalyticsService(self.db).record_chat_event(
+            workspace_id=session.workspace_id,
+            chatbot_id=session.chatbot_id,
+            session_id=session.id,
+            event_type="message_sent",
+            confidence=rag_response.get("confidence", 0.0),
+            tokens_used=tokens_in + tokens_out,
+            response_time_ms=rag_response.get("execution_time_ms"),
+            content=user_message,
+            cost_usd=cost_usd,
+            end_user_id=session.end_user_id,
         )
 
         # 9. Log token usage
@@ -199,16 +225,7 @@ class ChatEngine:
     # ── Private helpers ───────────────────────────────────────────────────────
 
     async def _validate_session(self, token: str):
-        session = await self.ses_repo.get_by_token(token)
-        if not session:
-            raise ForbiddenError("Invalid session token.")
-        if session.session_status != "active":
-            raise ForbiddenError("Session has ended.")
-        now = _utcnow()
-        if session.expires_at.replace(tzinfo=timezone.utc) < now:
-            await self.ses_repo.update(session, session_status="expired")
-            raise ForbiddenError("Session expired.")
-        return session
+        return await ChatSessionService(self.db).validate_session_token(token)
 
     async def _check_quota(self, workspace_id: uuid.UUID) -> None:
         redis = await get_redis()

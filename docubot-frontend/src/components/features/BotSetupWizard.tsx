@@ -76,6 +76,9 @@ export default function BotSetupWizard() {
   const [welcome, setWelcome] = useState("👋 Hi! How can I help you today?");
   const [color, setColor] = useState("#0052ff");
   const [selectedModel, setSelectedModel] = useState("openai/gpt-oss-20b");
+  const [customLlmProvider, setCustomLlmProvider] = useState("");
+  const [customLlmModel, setCustomLlmModel] = useState("");
+  const [providerApiKey, setProviderApiKey] = useState("");
   const [tone, setTone] = useState("friendly");
   const [systemPrompt, setSystemPrompt] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
@@ -336,29 +339,10 @@ export default function BotSetupWizard() {
         { method: "POST" },
       );
       if (!deployRes.ok) throw new Error("Deploy failed");
-
-      const channelRes = await fetchApi(
-        `/workspaces/${workspaceId}/chatbots/${currentChatbot?.id}/channels`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            channel_type: "widget",
-            channel_name: "Web Widget",
-            config: {},
-            allowed_domains: [],
-          }),
-        },
-      );
-      if (channelRes.ok) {
-        const channelData = await channelRes.json();
-        const embedRes = await fetchApi(
-          `/workspaces/${workspaceId}/chatbots/${currentChatbot?.id}/channels/${channelData.id}/embed`,
-        );
-        if (embedRes.ok) {
-          const embedData = await embedRes.json();
-          setEmbedScript(embedData.embed_script);
-          // Ideally save embed_script to local state, but we can rely on providers if we update it.
-        }
+      
+      const deployData = await deployRes.json();
+      if (deployData.embed_snippet) {
+        setEmbedScript(deployData.embed_snippet);
       }
       setQuickPhase("success");
     } catch (err) {
@@ -489,11 +473,12 @@ export default function BotSetupWizard() {
         }
       }
 
-      const provider = selectedModel.toLowerCase().includes("claude")
+      const provider = customLlmProvider || (selectedModel.toLowerCase().includes("claude")
         ? "anthropic"
         : selectedModel.toLowerCase().includes("gemini")
           ? "google"
-          : "groq";
+          : "groq");
+      const model = customLlmModel || selectedModel;
 
       const patchRes = await fetchApi(
         `/workspaces/${workspaceId}/chatbots/${currentChatbot?.id}`,
@@ -503,8 +488,9 @@ export default function BotSetupWizard() {
             brand_color: color,
             tone_preset: tone.toLowerCase(),
             custom_system_prompt: systemPrompt || desc,
-            llm_model: selectedModel,
+            llm_model: model,
             llm_provider: provider,
+            ...(providerApiKey ? { custom_api_key: providerApiKey } : {}),
           }),
         },
       );
@@ -513,35 +499,13 @@ export default function BotSetupWizard() {
 
       const deployRes = await fetchApi(
         `/workspaces/${workspaceId}/chatbots/${currentChatbot?.id}/deploy`,
-        {
-          method: "POST",
-        },
+        { method: "POST" },
       );
-
       if (!deployRes.ok) throw new Error("Failed to deploy chatbot");
-
-      const channelRes = await fetchApi(
-        `/workspaces/${workspaceId}/chatbots/${currentChatbot?.id}/channels`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            channel_type: "widget",
-            channel_name: "Web Widget",
-            config: {},
-            allowed_domains: [],
-          }),
-        },
-      );
-
-      if (!channelRes.ok) throw new Error("Failed to create channel");
-      const channelData = await channelRes.json();
-
-      const embedRes = await fetchApi(
-        `/workspaces/${workspaceId}/chatbots/${currentChatbot?.id}/channels/${channelData.id}/embed`,
-      );
-      if (embedRes.ok) {
-        const embedData = await embedRes.json();
-        setEmbedScript(embedData.embed_script);
+      
+      const deployData = await deployRes.json();
+      if (deployData.embed_snippet) {
+        setEmbedScript(deployData.embed_snippet);
       }
 
       setStep(7);
@@ -1098,11 +1062,11 @@ export default function BotSetupWizard() {
               </div>
 
               <h2 className="text-[22px] font-bold text-[#0a0b0d] tracking-tight mb-1 mt-1">
-                🎉 Your chatbot is live!
+                🎉 This is what the chatbot will look like on your website
               </h2>
               <p className="text-[12px] text-[#5b616e] text-center max-w-md mb-4">
                 Congratulations! {name || "Your bot"} has been successfully
-                deployed and is ready to assist your users.
+                configured and is ready for preview.
               </p>
 
               <div className="w-full max-w-[600px] space-y-3">
@@ -1152,88 +1116,23 @@ export default function BotSetupWizard() {
                   </pre>
                 </div>
 
-                {/* 3 Action Buttons — modern card style */}
-                <div className="grid grid-cols-3 gap-3">
-                  {/* Open Chatbot */}
-                  <button
-                    onClick={() =>
-                      window.open(
-                        `https://chat.docubot.ai/${name.toLowerCase().replace(/\s+/g, "-")}`,
-                        "_blank",
-                      )
-                    }
-                    className="group relative flex flex-col items-center justify-center gap-2.5 h-[100px] bg-white border border-[#eef0f3] hover:border-[#0052ff]/30 rounded-2xl shadow-sm hover:shadow-[0_4px_20px_-6px_rgba(0,82,255,0.18)] transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#0052ff]/[0.04] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-2xl" />
-                    <div className="w-10 h-10 rounded-xl bg-[#f0f5ff] group-hover:bg-[#0052ff] flex items-center justify-center transition-colors duration-200 shadow-sm">
-                      <Globe
-                        size={18}
-                        className="text-[#0052ff] group-hover:text-white transition-colors duration-200"
-                      />
-                    </div>
-                    <span className="text-[11px] font-semibold text-[#3d4350] group-hover:text-[#0052ff] transition-colors duration-200 relative">
-                      Open Chatbot
-                    </span>
-                  </button>
-
-                  {/* Copy Chatbot URL */}
-                  <button
-                    onClick={() =>
-                      copyToClipboard(
-                        `https://chat.docubot.ai/${name.toLowerCase().replace(/\s+/g, "-")}`,
-                        "url",
-                      )
-                    }
-                    className={`group relative flex flex-col items-center justify-center gap-2.5 h-[100px] bg-white border rounded-2xl shadow-sm transition-all duration-200 hover:-translate-y-0.5 overflow-hidden ${
-                      copied === "url"
-                        ? "border-[#05b169]/40 hover:border-[#05b169]/60"
-                        : "border-[#eef0f3] hover:border-[#7c3aed]/30 hover:shadow-[0_4px_20px_-6px_rgba(124,58,237,0.18)]"
-                    }`}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#7c3aed]/[0.04] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-2xl" />
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-200 shadow-sm ${
-                        copied === "url"
-                          ? "bg-[#05b169]"
-                          : "bg-[#f5f0ff] group-hover:bg-[#7c3aed]"
-                      }`}
-                    >
-                      {copied === "url" ? (
-                        <Check size={18} className="text-white" />
-                      ) : (
-                        <FileText
-                          size={18}
-                          className="text-[#7c3aed] group-hover:text-white transition-colors duration-200"
-                        />
-                      )}
-                    </div>
-                    <span
-                      className={`text-[11px] font-semibold transition-colors duration-200 relative ${
-                        copied === "url"
-                          ? "text-[#05b169]"
-                          : "text-[#3d4350] group-hover:text-[#7c3aed]"
-                      }`}
-                    >
-                      {copied === "url" ? "Copied!" : "Copy Chatbot URL"}
-                    </span>
-                  </button>
-
-                  {/* Dashboard */}
+                {/* Action Button */}
+                <div className="flex justify-center mt-6">
                   <button
                     onClick={() =>
                       router.push(`/dashboard/${workspaceId}/bots`)
                     }
-                    className="group relative flex flex-col items-center justify-center gap-2.5 h-[100px] bg-white border border-[#eef0f3] hover:border-[#05b169]/30 rounded-2xl shadow-sm hover:shadow-[0_4px_20px_-6px_rgba(5,177,105,0.18)] transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
+                    className="group relative flex items-center justify-center gap-3 px-8 h-12 bg-white border border-[#eef0f3] hover:border-[#05b169]/30 rounded-2xl shadow-sm hover:shadow-[0_4px_20px_-6px_rgba(5,177,105,0.18)] transition-all duration-200 hover:-translate-y-0.5 overflow-hidden"
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-[#05b169]/[0.04] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-2xl" />
-                    <div className="w-10 h-10 rounded-xl bg-[#ecfdf3] group-hover:bg-[#05b169] flex items-center justify-center transition-colors duration-200 shadow-sm">
+                    <div className="w-6 h-6 rounded-md bg-[#ecfdf3] group-hover:bg-[#05b169] flex items-center justify-center transition-colors duration-200 shadow-sm relative">
                       <Check
-                        size={18}
+                        size={14}
                         className="text-[#05b169] group-hover:text-white transition-colors duration-200"
                       />
                     </div>
-                    <span className="text-[11px] font-semibold text-[#3d4350] group-hover:text-[#05b169] transition-colors duration-200 relative">
-                      Dashboard
+                    <span className="text-xs font-bold text-[#3d4350] group-hover:text-[#05b169] transition-colors duration-200 relative">
+                      Go to Dashboard
                     </span>
                   </button>
                 </div>
@@ -1289,8 +1188,8 @@ export default function BotSetupWizard() {
       </div>
 
       {/* Steps Viewport */}
-      <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col justify-center">
-        <div className="max-w-xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col">
+        <div className="max-w-xl mx-auto w-full my-auto py-8">
           {/* STEP 1: Basic Identity */}
           {step === 1 && (
             <div className="space-y-4 animate-fadeIn">
@@ -1345,7 +1244,7 @@ export default function BotSetupWizard() {
                   onChange={handleLocalFileUpload}
                   multiple
                   className="hidden"
-                  accept=".pdf,.txt,.docx"
+                  accept=".pdf,.txt,.docx,.csv,.xlsx,.pptx,.md,.epub,.png,.jpg,.jpeg,.webp,.tiff,.bmp"
                 />
                 <Upload size={24} className="mx-auto mb-2 text-[#a8acb3]" />
                 <p className="font-semibold text-xs text-[#0a0b0d] dark:text-white">
@@ -1478,11 +1377,45 @@ export default function BotSetupWizard() {
                           </div>
                           <p className="text-[11px] text-[#7c828a] mt-0.5">{m.desc}</p>
                         </div>
-                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedModel === m.id ? "border-[#0052ff] bg-[#0052ff]" : "border-[#dee1e6]"}`}>
-                          {selectedModel === m.id && <Check size={10} className="text-white" />}
+                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedModel === m.id && !customLlmProvider && !customLlmModel ? "border-[#0052ff] bg-[#0052ff]" : "border-[#dee1e6]"}`}>
+                          {selectedModel === m.id && !customLlmProvider && !customLlmModel && <Check size={10} className="text-white" />}
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-[#dee1e6] dark:border-white/10 space-y-4">
+                  <h3 className="text-xs font-bold text-[#0a0b0d] dark:text-white">Custom Provider & API Key (Optional)</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-[#5b616e] mb-1.5">LLM Provider</label>
+                      <input
+                        className="w-full h-8 px-3 border border-[#dee1e6] dark:border-white/10 rounded-xl text-xs bg-white dark:bg-[#0d111b] text-[#0a0b0d] dark:text-white focus:border-[#0052ff] outline-none placeholder:text-[#a8acb3]"
+                        placeholder="e.g. groq"
+                        value={customLlmProvider}
+                        onChange={(e) => setCustomLlmProvider(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-[#5b616e] mb-1.5">LLM Model</label>
+                      <input
+                        className="w-full h-8 px-3 border border-[#dee1e6] dark:border-white/10 rounded-xl text-xs bg-white dark:bg-[#0d111b] text-[#0a0b0d] dark:text-white focus:border-[#0052ff] outline-none placeholder:text-[#a8acb3]"
+                        placeholder="e.g.openai/gpt-oss-20b"
+                        value={customLlmModel}
+                        onChange={(e) => setCustomLlmModel(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-semibold text-[#5b616e] mb-1.5">Provider API Key</label>
+                    <input
+                      type="password"
+                      className="w-full h-8 px-3 border border-[#dee1e6] dark:border-white/10 rounded-xl text-xs bg-white dark:bg-[#0d111b] text-[#0a0b0d] dark:text-white focus:border-[#0052ff] outline-none placeholder:text-[#a8acb3]"
+                      placeholder="gsk_...bhA0"
+                      value={providerApiKey}
+                      onChange={(e) => setProviderApiKey(e.target.value)}
+                    />
                   </div>
                 </div>
                 <div>
@@ -1548,10 +1481,10 @@ export default function BotSetupWizard() {
                   className={`p-4 rounded-xl border cursor-pointer transition-all ${plan === "starter" ? "border-[#0052ff] bg-[#f0f5ff] dark:bg-blue-900/10" : "border-[#dee1e6] dark:border-white/10"}`}
                 >
                   <p className="font-semibold text-xs text-[#0a0b0d] dark:text-white">
-                    Starter Tier
+                    Free Tier
                   </p>
                   <p className="text-[10px] text-[#7c828a] mt-1">
-                    1.5k chats · $19/mo
+                    $00.00/mo
                   </p>
                 </div>
                 <div
@@ -1594,7 +1527,7 @@ export default function BotSetupWizard() {
                     {localEmbedCodeCopied ? "Copied!" : "Copy code"}
                   </button>
                 </div>
-                <pre className="bg-slate-50 dark:bg-slate-950 border border-[#dee1e6] dark:border-white/5 rounded-xl p-3 text-[10px] text-indigo-700 dark:text-indigo-300 font-mono overflow-x-auto leading-relaxed">
+                <pre className="bg-slate-50 dark:bg-slate-950 border border-[#dee1e6] dark:border-white/5 rounded-xl p-3 text-[10px] text-indigo-700 dark:text-indigo-300 font-mono overflow-x-auto leading-relaxed whitespace-pre-wrap">
                   <code>{embedScript || "Generating embed script..."}</code>
                 </pre>
               </div>

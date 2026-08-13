@@ -6,6 +6,7 @@ import {
   FileText, MessageSquare, Hash, Clock, RefreshCw,
   Activity, Package, UserCircle, ChevronDown
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useAuth, useWorkspace } from "@/components/providers/Providers";
 import { fetchApi } from "@/lib/api";
 import { Toast } from "@/components/ui/shared-dashboard";
@@ -35,6 +36,7 @@ interface ChannelItem {
 }
 
 export default function Deployments() {
+  const router = useRouter();
   const { user } = useAuth();
   const { workspaceId, currentChatbot, chatbots } = useWorkspace();
 
@@ -140,7 +142,7 @@ export default function Deployments() {
   };
 
   const copyText = (text: string, key: "url" | "embed" | "chatbot-url") => {
-    navigator.clipboard.writeText(text).then(() => {
+    const onSuccess = () => {
       setCopiedKey(key);
       showToast(
         key === "url" || key === "chatbot-url"
@@ -148,7 +150,27 @@ export default function Deployments() {
           : "Embed code copied to clipboard"
       );
       setTimeout(() => setCopiedKey(null), 2000);
-    });
+    };
+
+    if (typeof window !== "undefined" && navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(onSuccess);
+    } else {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        onSuccess();
+      } catch (e) {
+        console.error("Fallback copy failed", e);
+        showToast("Failed to copy text");
+      }
+      document.body.removeChild(textArea);
+    }
   };
 
   const isLive = deployment.status === "published" || activeBot?.status === "Active";
@@ -165,7 +187,8 @@ export default function Deployments() {
           if (docsRes.ok) {
             const docs = await docsRes.json();
             if (!docs || docs.length === 0) {
-              showToast("Cannot publish: Knowledge base is empty. Please add documents first.");
+              showToast("Knowledge base is empty. Please add documents first.");
+              router.push(`/dashboard/${workspaceId}/bots/${botId}/knowledge?action=upload`);
               return;
             }
           }
@@ -174,20 +197,24 @@ export default function Deployments() {
           showToast("Failed to validate knowledge base.");
           return;
         }
+      } else {
+        if (!window.confirm("Are you sure you want to unpublish this chatbot? It will go offline immediately.")) {
+          return;
+        }
       }
 
       try {
         if (nextState) {
-          await fetchApi(`/workspaces/${workspaceId}/chatbots/${botId}`, {
-            method: "PATCH",
-            body: JSON.stringify({
-              status: "Active",
-              deployment_status: "published",
-            }),
+          await fetchApi(`/workspaces/${workspaceId}/chatbots/${botId}/deploy`, {
+            method: "POST"
           });
         } else {
           await fetchApi(`/workspaces/${workspaceId}/chatbots/${botId}`, {
-            method: "DELETE",
+            method: "PATCH",
+            body: JSON.stringify({
+              is_active: false,
+              deployment_status: "draft",
+            }),
           });
         }
       } catch (err) {
@@ -201,7 +228,7 @@ export default function Deployments() {
       setUserSelectedBot({
         ...activeBot,
         status: nextState ? "Active" : "Inactive",
-        deployment_status: nextState ? "published" : "archived",
+        deployment_status: nextState ? "published" : "draft",
       });
     }
     setDeployment((prev) => ({
@@ -218,10 +245,9 @@ export default function Deployments() {
   const botSlug = botName.toLowerCase().replace(/\s+/g, "-");
   const publicUrl = `https://chat.docubot.ai/${botSlug}`;
 
-  const generatedEmbed = deployment.widgetChannel
-    ? `<script\n  src="http://localhost:3000/widget.js"\n  data-chatbot-id="${currentBotId || ""}"\n  data-workspace="${workspaceId || ""}"\n  data-channel-id="${deployment.widgetChannel}"\n  async\n></script>`
-    : `<!-- No web channel configured yet. Please configure a channel to get the embed code. -->`;
-  const embedCode = deployment.embedScript || generatedEmbed;
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8001";
+  const generatedEmbed = `<script src="${backendUrl}/widget.js" data-chatbot-id="${currentBotId}" async></script>`;
+  const embedCode = isLive ? (deployment.embedScript || generatedEmbed) : "<!-- Chatbot not published. Please publish the chatbot to get the embed code. -->";
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "Recently";
@@ -291,13 +317,6 @@ export default function Deployments() {
               </div>
             )}
           </div>
-
-          <button
-            onClick={handleTogglePublish}
-            className="h-8 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0d111b] text-xs font-semibold text-[#5b616e] dark:text-slate-350 hover:bg-[#f7f7f7] dark:hover:bg-white/5 transition-colors cursor-pointer"
-          >
-            {isLive ? "Unpublish" : "Publish"}
-          </button>
         </div>
       </div>
 
@@ -340,10 +359,14 @@ export default function Deployments() {
               </button>
               <button
                 onClick={handleTogglePublish}
-                className="h-8 px-4 rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0d111b] text-xs font-semibold text-[#5b616e] dark:text-slate-350 hover:bg-[#f7f7f7] dark:hover:bg-white/5 transition-colors flex items-center gap-1.5 cursor-pointer"
+                className={`h-8 px-4 rounded-full border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  isLive 
+                    ? "border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-900 dark:hover:bg-rose-900/30" 
+                    : "border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-900 dark:hover:bg-emerald-900/30"
+                }`}
               >
-                <Rocket size={12} className="text-slate-400" />
-                {isLive ? "Unpublish" : "Publish"}
+                <Rocket size={12} />
+                {isLive ? "Unpublish Bot" : "Publish Bot"}
               </button>
             </div>
           </div>
@@ -383,18 +406,11 @@ export default function Deployments() {
           </div>
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-[#5b616e]">Website Embed Code</label>
-              <button
-                type="button"
-                onClick={() => setCodeExpanded(e => !e)}
-                className="text-xs font-semibold text-[#0052ff] hover:underline border-0 bg-transparent cursor-pointer"
-              >
-                {codeExpanded ? "Collapse" : "Expand"}
-              </button>
+              <h4 className="text-sm font-semibold text-[#0a0b0d] dark:text-white">Website Integration Snippet</h4>
             </div>
             <p className="text-[10.5px] text-[#7c828a] mb-2.5">Paste this script immediately before the closing <code className="font-mono text-[#cf202f] bg-slate-100 dark:bg-white/5 px-1 py-0.5 rounded">&lt;/body&gt;</code> tag.</p>
             <div className="relative">
-              <pre className={`bg-[#0a0b0d] rounded-xl p-4 pr-28 text-xs text-[#05b169] font-mono leading-relaxed ${codeExpanded ? "whitespace-pre-wrap break-all" : "whitespace-pre overflow-hidden max-h-24"}`}>
+              <pre className="bg-[#0a0b0d] rounded-xl p-4 pr-28 text-xs text-[#05b169] font-mono leading-relaxed whitespace-pre-wrap break-all h-auto">
                 {embedCode}
               </pre>
               <button

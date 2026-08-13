@@ -5,6 +5,7 @@ forgot-password, reset-password, change-password.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from datetime import timezone
 
@@ -14,6 +15,7 @@ from app.config import settings
 from app.core.auth.jwt_handler import (
     create_access_token,
     create_refresh_token,
+    decode_token,
     get_user_id_from_token,
 )
 from app.data.models import User
@@ -53,6 +55,17 @@ from app.utils.validation import has_valid_mx
 
 _REFRESH_TTL = settings.refresh_token_expire_days * 86_400  # seconds
 _log = logging.getLogger(__name__)
+
+
+def _get_token_identifier(token: str) -> str:
+    try:
+        payload = decode_token(token, expected_type="refresh")
+        jti = payload.get("jti")
+        if not jti:
+            raise ValueError
+    except Exception:
+        jti = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    return str(jti)
 
 
 class AuthService:
@@ -135,11 +148,12 @@ class AuthService:
 
     async def refresh(self, data: RefreshTokenRequest) -> TokenResponse:
         user_id = get_user_id_from_token(data.refresh_token, expected_type="refresh")
+        jti = _get_token_identifier(data.refresh_token)
 
         # Check Redis blacklist — degrade gracefully if Redis is down
         try:
             redis = await get_redis()
-            blacklisted = await redis.get(f"blacklist:refresh:{data.refresh_token[:16]}")
+            blacklisted = await redis.get(f"blacklist:refresh:{jti}")
             if blacklisted:
                 raise InvalidTokenError()
         except InvalidTokenError:
@@ -155,7 +169,7 @@ class AuthService:
         try:
             redis = await get_redis()
             await redis.setex(
-                f"blacklist:refresh:{data.refresh_token[:16]}",
+                f"blacklist:refresh:{jti}",
                 _REFRESH_TTL,
                 "1",
             )
@@ -168,10 +182,11 @@ class AuthService:
 
     async def logout(self, refresh_token: str) -> None:
         """Blacklist the refresh token. Degrades gracefully if Redis is down."""
+        jti = _get_token_identifier(refresh_token)
         try:
             redis = await get_redis()
             await redis.setex(
-                f"blacklist:refresh:{refresh_token[:16]}",
+                f"blacklist:refresh:{jti}",
                 _REFRESH_TTL,
                 "1",
             )

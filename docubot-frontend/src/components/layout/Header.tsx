@@ -204,8 +204,8 @@ export default function Header() {
         </div>
 
         {/* Right: Members Stack & Invite Button */}
+        {/* 
         <div className="flex items-center gap-4 shrink-0">
-          {/* 3. Workspace Members Avatar Stack & Dropdown */}
           <div className="relative flex items-center gap-2" ref={membersRef}>
             <button
               onClick={() => setIsMembersOpen(!isMembersOpen)}
@@ -251,7 +251,6 @@ export default function Header() {
             )}
           </div>
 
-          {/* 4. Invite Button */}
           <button
             onClick={() => router.push(`/dashboard/${workspaceId}/team?invite=true`)}
             className="flex items-center gap-1.5 h-8 px-4 rounded-full text-xs font-semibold text-[#5b616e] dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-white/5 border border-slate-200 dark:border-white/10 transition-colors shadow-sm cursor-pointer bg-white dark:bg-[#0d111b]"
@@ -259,6 +258,7 @@ export default function Header() {
             <UserPlus size={12} className="shrink-0" /> Invite
           </button>
         </div>
+        */}
       </div>
     </header>
   );

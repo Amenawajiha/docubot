@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { fetchApi } from "@/lib/api";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 // Mock data structures
 export interface MockChatbot {
@@ -442,6 +443,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                               b.llm_provider.slice(1).toLowerCase()
                           : "OpenAI",
                         welcomeMessage: b.welcome_message,
+                        apiKey: b.custom_api_key_masked,
                       };
                     }),
                   );
@@ -847,17 +849,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <ThemeContext.Provider value={{ isDarkTheme, toggleTheme }}>
-      <AuthContext.Provider
-        value={{
-          isLoggedIn,
-          loading,
-          user,
-          handleLogout,
-          setLoggedIn: setIsLoggedIn,
-          setUser,
-        }}
-      >
+    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
+      <ThemeContext.Provider value={{ isDarkTheme, toggleTheme }}>
+        <AuthContext.Provider
+          value={{
+            isLoggedIn,
+            loading,
+            user,
+            handleLogout,
+            setLoggedIn,
+            setUser,
+          }}
+        >
         <WorkspaceContext.Provider value={workspaceValue}>
           {showWorkspacePrompt && (
             <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
@@ -897,5 +900,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
         </WorkspaceContext.Provider>
       </AuthContext.Provider>
     </ThemeContext.Provider>
+    </GoogleOAuthProvider>
   );
 }

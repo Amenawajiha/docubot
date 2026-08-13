@@ -19,6 +19,7 @@ from app.schemas.auth import (
     UserOut,
     UserUpdate,
     VerifyEmailRequest,
+    GoogleVerifyRequest,
 )
 from app.utils.exceptions import BadRequestError, ConflictError
 from app.utils.security import generate_secure_token
@@ -262,72 +263,39 @@ async def update_me(
 # ── Google OAuth ──────────────────────────────────────────────────────────────
 
 
-@router.get(
-    "/google",
-    response_model=OAuthUrlResponse,
-    summary="Get Google OAuth authorization URL",
+@router.post(
+    "/google/verify",
+    response_model=TokenResponse,
+    summary="Verify Google ID Token from client",
 )
-async def get_google_auth_url(response: Response) -> OAuthUrlResponse:
-    state = generate_secure_token(32)
+async def verify_google(
+    request: GoogleVerifyRequest,
+    response: Response,
+    session: DbSession,
+) -> TokenResponse:
+    svc = _oauth_svc(session)
+    token_response = await svc.verify_google_token(request.credential)
+    
     response.set_cookie(
-        key="oauth_state",
-        value=state,
+        key="access_token",
+        value=token_response.access_token,
         httponly=True,
         secure=settings.is_production,
         samesite="lax",
-        max_age=600
+        max_age=settings.access_token_expire_minutes * 60
     )
-    url = OAuthService(None).get_google_auth_url(state)
-    return OAuthUrlResponse(url=url)
-
-
-@router.get(
-    "/google/callback",
-    summary="Google OAuth callback handler",
-    include_in_schema=False,  
-)
-async def google_callback(
-    code: str,
-    state: str,
-    request: Request,
-    session: DbSession,
-) -> RedirectResponse:
-    cookie_state = request.cookies.get("oauth_state")
-
-    if not cookie_state or cookie_state != state:
-        redirect_url = f"{settings.frontend_url}/auth/verify-error?reason=csrf_detected"
-        redirect_response = RedirectResponse(url=redirect_url, status_code=status.HTTP_302_FOUND)
-        redirect_response.delete_cookie("oauth_state")
-        return redirect_response
-
-    svc = _oauth_svc(session)
-    try:
-        token_response = await svc.handle_google_callback(code)
-        callback_url = f"{settings.frontend_url}/auth/verify-success"
-        redirect_response = RedirectResponse(url=callback_url, status_code=status.HTTP_302_FOUND)
-        redirect_response.delete_cookie("oauth_state")
-        redirect_response.set_cookie(
-            key="access_token",
-            value=token_response.access_token,
-            httponly=True,
-            secure=settings.is_production,
-            samesite="lax",
-            max_age=settings.access_token_expire_minutes * 60
-        )
-        redirect_response.set_cookie(
-            key="refresh_token",
-            value=token_response.refresh_token,
-            httponly=True,
-            secure=settings.is_production,
-            samesite="lax",
-            max_age=settings.refresh_token_expire_days * 86400
-        )
-        return redirect_response
-    except Exception as exc:
-        redirect_url = OAuthService.build_frontend_error_redirect(str(exc))
-        redirect_response = RedirectResponse(url=redirect_url, status_code=status.HTTP_302_FOUND)
-        redirect_response.delete_cookie("oauth_state")
-        return redirect_response
+    response.set_cookie(
+        key="refresh_token",
+        value=token_response.refresh_token,
+        httponly=True,
+        secure=settings.is_production,
+        samesite="lax",
+        max_age=settings.refresh_token_expire_days * 86400
+    )
+    
+    token_response.access_token = ""
+    token_response.refresh_token = ""
+    return token_response
 
 
 # ── GitHub OAuth ──────────────────────────────────────────────────────────────

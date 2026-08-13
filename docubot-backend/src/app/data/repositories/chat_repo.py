@@ -6,9 +6,9 @@ All queries are hard-scoped to (workspace_id, chatbot_id).
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.data.models import ChatMessage, ChatSession, InternalApiKey, WorkspaceUsageLog
@@ -99,6 +99,57 @@ class ChatMessageRepository(BaseRepository[ChatMessage]):
             .limit(limit)
         )
         return list(reversed(result.scalars().all()))
+
+    async def purge_old_messages_for_session(
+        self, session_id: uuid.UUID, keep_recent: int = 10
+    ) -> int:
+        """
+        Delete older messages for a given session while keeping the most recent N messages.
+        Returns number of deleted messages.
+        """
+        result = await self.session.execute(
+            select(ChatMessage.id)
+            .where(ChatMessage.session_id == session_id)
+            .order_by(ChatMessage.created_at.desc())
+            .offset(keep_recent)
+        )
+        old_ids = list(result.scalars().all())
+        if not old_ids:
+            return 0
+        del_res = await self.session.execute(
+            delete(ChatMessage).where(ChatMessage.id.in_(old_ids))
+        )
+        await self.session.commit()
+        return del_res.rowcount or len(old_ids)
+
+    async def insert_summary_message(
+        self,
+        workspace_id: uuid.UUID,
+        chatbot_id: uuid.UUID,
+        session_id: uuid.UUID,
+        end_user_id: str | None,
+        summary_text: str,
+    ) -> ChatMessage:
+        """Insert a summarized representation of older conversation turns before existing messages."""
+        recent_res = await self.session.execute(
+            select(ChatMessage.created_at)
+            .where(ChatMessage.session_id == session_id)
+            .order_by(ChatMessage.created_at.asc())
+            .limit(1)
+        )
+        oldest_dt = recent_res.scalar_one_or_none()
+        summary_dt = (oldest_dt - timedelta(seconds=1)) if oldest_dt else datetime.now(timezone.utc)
+
+        return await self.create(
+            workspace_id=workspace_id,
+            chatbot_id=chatbot_id,
+            session_id=session_id,
+            end_user_id=end_user_id,
+            role="assistant",
+            content=f"[Conversation Summary]: {summary_text}",
+            created_at=summary_dt,
+            metadata_={"is_summary": True},
+        )
 
 
 class UsageLogRepository(BaseRepository[WorkspaceUsageLog]):

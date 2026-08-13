@@ -77,7 +77,6 @@ export default function BotSettings() {
   // Local draft states for configuration
   const [name, setName] = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState("");
-  const [avatarEmoji, setAvatarEmoji] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
   const [llmProvider, setLlmProvider] = useState("OpenAI");
   const [selectedModel, setSelectedModel] = useState("gpt-4o");
@@ -90,7 +89,6 @@ export default function BotSettings() {
     if (activeBot) {
       setName(activeBot.name || "");
       setWelcomeMessage(activeBot.welcomeMessage || "Hello! Welcome to our website. How can I help you today?");
-      setAvatarEmoji(activeBot.avatarEmoji || "🤖");
       setSystemPrompt(activeBot.systemPrompt || "You are a helpful assistant...");
       setLlmProvider(activeBot.llmProvider || "OpenAI");
       setSelectedModel(activeBot.selectedModel || "gpt-4o");
@@ -102,56 +100,37 @@ export default function BotSettings() {
 
   const handleSaveSettings = async () => {
     if (!workspaceId || !activeBot?.id) return;
-    if (botStudioTab === "ai-engine") {
-      try {
-        const payload = {
-          llm_provider: llmProvider.toLowerCase(),
-          llm_model: selectedModel,
-          custom_api_key: apiKey || null,
-          custom_system_prompt: systemPrompt,
-          tone_preset: tone.toLowerCase()
-        };
-        const res = await fetchApi(`/workspaces/${workspaceId}/chatbots/${activeBot.id}`, {
-          method: "PATCH",
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) throw new Error("Failed to save AI Engine settings");
-        
-        const updatedBot = await res.json();
-        
-        setChatbots((prev) =>
-          prev.map((b) =>
-            b.id === activeBot.id
-              ? {
-                  ...b,
-                  systemPrompt: updatedBot.custom_system_prompt,
-                  llmProvider: updatedBot.llm_provider ? (updatedBot.llm_provider.toLowerCase() === "openai" ? "OpenAI" : updatedBot.llm_provider.charAt(0).toUpperCase() + updatedBot.llm_provider.slice(1).toLowerCase()) : "OpenAI",
-                  selectedModel: updatedBot.llm_model,
-                  tone: updatedBot.tone_preset ? updatedBot.tone_preset.charAt(0).toUpperCase() + updatedBot.tone_preset.slice(1).toLowerCase() : "Friendly",
-                  apiKey: apiKey
-                }
-              : b
-          )
-        );
-        alert("AI Engine settings saved successfully!");
-      } catch (err) {
-        console.error(err);
-        alert("Error saving settings");
-      }
-    } else {
+    try {
+      const payload: any = {
+        name: name || undefined,
+        llm_provider: llmProvider.toLowerCase(),
+        llm_model: selectedModel,
+        ...(apiKey && apiKey !== activeBot?.apiKey ? { custom_api_key: apiKey } : {}),
+        custom_system_prompt: systemPrompt,
+        tone_preset: tone.toLowerCase(),
+        welcome_message: welcomeMessage,
+        brand_color: /^#[0-9A-F]{6}$/i.test(color) ? color : undefined
+      };
+      const res = await fetchApi(`/workspaces/${workspaceId}/chatbots/${activeBot.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error("Failed to save chatbot settings");
+      
+      const updatedBot = await res.json();
+      
       setChatbots((prev) =>
         prev.map((b) =>
           b.id === activeBot.id
             ? {
                 ...b,
-                name,
-                welcomeMessage,
-                avatarEmoji,
-                systemPrompt,
-                llmProvider,
-                selectedModel,
-                color,
-                tone,
+                name: updatedBot.name || name,
+                welcomeMessage: updatedBot.welcome_message || welcomeMessage,
+                systemPrompt: updatedBot.custom_system_prompt || systemPrompt,
+                llmProvider: updatedBot.llm_provider ? (updatedBot.llm_provider.toLowerCase() === "openai" ? "OpenAI" : updatedBot.llm_provider.charAt(0).toUpperCase() + updatedBot.llm_provider.slice(1).toLowerCase()) : "OpenAI",
+                selectedModel: updatedBot.llm_model || selectedModel,
+                tone: updatedBot.tone_preset ? updatedBot.tone_preset.charAt(0).toUpperCase() + updatedBot.tone_preset.slice(1).toLowerCase() : "Friendly",
+                color: updatedBot.brand_color || color,
                 apiKey
               }
             : b
@@ -159,40 +138,9 @@ export default function BotSettings() {
       );
       alert("Bot configuration saved & published successfully!");
       router.push(`/dashboard/${workspaceId}/bots/${activeBot.id}/deployment`);
-    }
-  };
-
-  const handleSaveAppearance = async () => {
-    if (!workspaceId || !activeBot?.id) return;
-    try {
-      const payload = {
-        welcome_message: welcomeMessage,
-        brand_color: color
-      };
-      const res = await fetchApi(`/workspaces/${workspaceId}/chatbots/${activeBot.id}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error("Failed to save appearance settings");
-      
-      const updatedBot = await res.json();
-
-      setChatbots((prev) =>
-        prev.map((b) =>
-          b.id === activeBot.id
-            ? {
-                ...b,
-                welcomeMessage: updatedBot.welcome_message,
-                color: updatedBot.brand_color,
-                avatarEmoji
-              }
-            : b
-        )
-      );
-      alert("Appearance saved successfully!");
     } catch (err) {
       console.error(err);
-      alert("Error saving appearance settings");
+      alert("Error saving settings");
     }
   };
 
@@ -252,15 +200,14 @@ export default function BotSettings() {
       <div className="bg-white dark:bg-[#0d111b] rounded-2xl border border-slate-200 dark:border-white/5 p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
         <div className="space-y-2 text-left">
           <div className="flex items-center space-x-2">
-            <span className="text-xl">{avatarEmoji}</span>
-            <h3 className="text-base font-extrabold text-[#0a1a2f] dark:text-white">{name}</h3>
+            <h3 className="text-base font-extrabold text-[#0a1a2f] dark:text-white">{name || activeBot?.name || "Assistant"}</h3>
           </div>
 
           {/* Badge row */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <span className="inline-flex items-center gap-1.5 bg-pink-50 text-pink-700 dark:bg-pink-500/10 dark:text-pink-400 border border-pink-100 dark:border-pink-500/20 px-3.5 py-1 rounded-full text-[10px] font-bold">
               <Bot className="w-3.5 h-3.5 text-pink-500 shrink-0" />
-              SaaS Assistant
+              {activeBot?.goal || "SaaS Assistant"}
             </span>
             <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20 px-3.5 py-1 rounded-full text-[10px] font-bold">
               <ModelIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -270,21 +217,27 @@ export default function BotSettings() {
               <ToneIcon className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
               {tone}
             </span>
-            <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-450 border border-emerald-100 dark:border-emerald-500/20 px-3.5 py-1 rounded-full text-[10px] font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              Live
-            </span>
+            {activeBot?.deployment_status === "live" || activeBot?.deployment_status === "published" || activeBot?.status === "Active" ? (
+              <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-450 border border-emerald-100 dark:border-emerald-500/20 px-3.5 py-1 rounded-full text-[10px] font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                Live
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-3.5 py-1 rounded-full text-[10px] font-bold">
+                Draft
+              </span>
+            )}
           </div>
         </div>
 
         {/* Metrics Row */}
         <div className="flex gap-4 shrink-0 self-end md:self-center">
           <div className="px-5 py-2.5 rounded-2xl bg-[#f7f7f7] dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-center min-w-[100px] shadow-sm">
-            <p className="text-xl font-black text-emerald-500 dark:text-emerald-450">94%</p>
-            <p className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Answer quality</p>
+            <p className="text-xl font-black text-emerald-500 dark:text-emerald-450">{activeBot?.docs ?? 0}</p>
+            <p className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Knowledge Docs</p>
           </div>
           <div className="px-5 py-2.5 rounded-2xl bg-[#f7f7f7] dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-center min-w-[100px] shadow-sm">
-            <p className="text-xl font-black text-[#0052ff] dark:text-blue-400">24</p>
+            <p className="text-xl font-black text-[#0052ff] dark:text-blue-400">{activeBot?.chats ?? 0}</p>
             <p className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider mt-0.5">Total chats</p>
           </div>
         </div>
@@ -429,33 +382,20 @@ export default function BotSettings() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[10px] font-bold text-[#5b616e] uppercase tracking-wide mb-1.5">Bot avatar emoji</label>
-                      <input
-                        type="text"
-                        value={avatarEmoji}
-                        onChange={(e) => setAvatarEmoji(e.target.value)}
-                        placeholder="🤖"
-                        maxLength={2}
-                        className="w-full h-9 px-3 border border-slate-200 dark:border-white/10 rounded-xl text-xs bg-[#f7f7f7] dark:bg-slate-900 text-[#0a0b0d] dark:text-white focus:border-[#0052ff] outline-none text-center font-bold text-lg"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-[#5b616e] uppercase tracking-wide mb-1.5">Choose Brand color Accent</label>
-                      <div className="flex items-center gap-2 pt-1">
-                        {["#0052ff", "#10B981", "#EC4899", "#8B5CF6", "#F59E0B"].map((c) => (
-                          <button
-                            key={c}
-                            onClick={() => setColor(c)}
-                            className={`w-8 h-8 rounded-full border-2 transition-transform ${
-                              color === c ? "scale-110 border-[#0a0b0d] dark:border-white" : "border-transparent"
-                            }`}
-                            style={{ backgroundColor: c }}
-                          />
-                        ))}
-                      </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#5b616e] uppercase tracking-wide mb-1.5">Choose Brand color Accent</label>
+                    <div className="flex items-center gap-2 pt-1">
+                      {["#0052ff", "#10B981", "#EC4899", "#8B5CF6", "#F59E0B"].map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setColor(c)}
+                          className={`w-8 h-8 rounded-full border-2 transition-transform ${
+                            color === c ? "scale-110 border-[#0a0b0d] dark:border-white" : "border-transparent"
+                          }`}
+                          style={{ backgroundColor: c }}
+                        />
+                      ))}
                     </div>
                   </div>
 
@@ -464,23 +404,19 @@ export default function BotSettings() {
                     <div className="flex items-center space-x-2.5 bg-[#f7f7f7] dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 h-9 max-w-[200px]">
                       <input
                         type="color"
-                        value={color}
+                        value={/^#[0-9A-F]{6}$/i.test(color) ? color : "#0052ff"}
                         onChange={(e) => setColor(e.target.value)}
                         className="w-5 h-5 rounded border-0 cursor-pointer bg-transparent"
                       />
-                      <span className="font-mono text-xs font-bold uppercase text-slate-700 dark:text-slate-300">
-                        {color}
-                      </span>
+                      <input
+                        type="text"
+                        value={color}
+                        onChange={(e) => setColor(e.target.value)}
+                        maxLength={7}
+                        placeholder="#0052ff"
+                        className="w-full bg-transparent font-mono text-xs font-bold uppercase text-slate-700 dark:text-slate-300 border-0 outline-none"
+                      />
                     </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-slate-200 dark:border-white/5 flex justify-end">
-                    <button
-                      onClick={handleSaveAppearance}
-                      className="bg-[#0052ff] hover:bg-[#003ecc] text-white px-5 py-2.5 rounded-xl text-xs font-bold cursor-pointer border-0 shadow-sm transition-colors"
-                    >
-                      Save Appearance
-                    </button>
                   </div>
                 </div>
               </div>
@@ -498,10 +434,7 @@ export default function BotSettings() {
                   <div>
                     <label className="block text-[10px] font-bold text-[#5b616e] uppercase tracking-wide mb-1.5">Default greeting language</label>
                     <select className="w-full h-9 px-3 border border-slate-200 dark:border-white/10 rounded-xl text-xs bg-[#f7f7f7] dark:bg-slate-900 text-[#0a0b0d] dark:text-white focus:border-[#0052ff] outline-none">
-                      <option>English (US)</option>
-                      <option>Spanish (ES)</option>
-                      <option>French (FR)</option>
-                      <option>German (DE)</option>
+                      <option value="en">English (US)</option>
                     </select>
                   </div>
                   <p className="text-[10px] text-[#7c828a] leading-normal font-medium">
@@ -578,13 +511,29 @@ export default function BotSettings() {
                   <form onSubmit={handleSendStudioMessage} className="pt-3 border-t border-slate-100 dark:border-white/5 flex gap-3">
                     <input
                       type="text"
-                      placeholder="Ask a question..."
+                      placeholder="Click to open Playground..."
                       value={studioInput}
                       onChange={(e) => setStudioInput(e.target.value)}
-                      className="flex-1 h-9 px-3 bg-[#f7f7f7] dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-[#0a0b0d] dark:text-white focus:border-[#0052ff] outline-none"
+                      onClick={() => {
+                        if (workspaceId && activeBot?.id) {
+                          router.push(`/dashboard/${workspaceId}/bots/${activeBot.id}/playground`);
+                        }
+                      }}
+                      onFocus={() => {
+                        if (workspaceId && activeBot?.id) {
+                          router.push(`/dashboard/${workspaceId}/bots/${activeBot.id}/playground`);
+                        }
+                      }}
+                      className="flex-1 h-9 px-3 bg-[#f7f7f7] dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-xs text-[#0a0b0d] dark:text-white focus:border-[#0052ff] outline-none cursor-pointer"
                     />
                     <button
                       type="submit"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (workspaceId && activeBot?.id) {
+                          router.push(`/dashboard/${workspaceId}/bots/${activeBot.id}/playground`);
+                        }
+                      }}
                       className="bg-[#0052ff] hover:bg-[#003ecc] text-white h-9 px-5 rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer border-0 shrink-0"
                     >
                       Send
@@ -630,7 +579,9 @@ export default function BotSettings() {
             <div className="w-full max-w-[320px] bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/5 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[380px]">
               {/* Widget header */}
               <div className="p-4 flex items-center space-x-3 text-white transition-colors duration-300" style={{ backgroundColor: color }}>
-                <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-sm">{avatarEmoji}</div>
+                <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-sm">
+                  <Bot className="w-4 h-4 text-white" />
+                </div>
                 <div className="flex-1 min-w-0 font-bold text-xs truncate">
                   {name || "Product Docs Bot"}
                 </div>

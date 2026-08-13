@@ -15,7 +15,7 @@ export default function BotDetailLayout({
   const { workspaceId, currentChatbot } = useWorkspace();
 
   const tabs = [
-    { id: "settings", label: "AI Studio (Settings)", icon: Settings, path: `/dashboard/${workspaceId}/bots/${currentChatbot?.id}/settings` },
+    { id: "settings", label: "Bot Studio (Settings)", icon: Settings, path: `/dashboard/${workspaceId}/bots/${currentChatbot?.id}/settings` },
     { id: "playground", label: "Testing Playground", icon: Terminal, path: `/dashboard/${workspaceId}/bots/${currentChatbot?.id}/playground` },
     { id: "knowledge", label: "Knowledge Base", icon: Brain, path: `/dashboard/${workspaceId}/bots/${currentChatbot?.id}/knowledge` },
     { id: "deployment", label: "Deployment", icon: Globe, path: `/dashboard/${workspaceId}/bots/${currentChatbot?.id}/deployment` },
@@ -29,12 +29,18 @@ export default function BotDetailLayout({
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = pathname === tab.path || (tab.id === "settings" && pathname === `/dashboard/${workspaceId}/bots/${currentChatbot?.id}`);
+          const isArchived = currentChatbot?.deployment_status === "archived";
+          const isTabDisabled = isArchived && tab.id !== "deployment";
+
           return (
             <button
               key={tab.id}
-              onClick={() => router.push(tab.path)}
-              className={`flex items-center gap-2 pb-3.5 px-4 text-xs font-bold transition-all relative border-0 bg-transparent cursor-pointer whitespace-nowrap ${
-                isActive ? "text-[#0D53FC] dark:text-blue-400" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              onClick={() => !isTabDisabled && router.push(tab.path)}
+              disabled={isTabDisabled}
+              className={`flex items-center gap-2 pb-3.5 px-4 text-xs font-bold transition-all relative border-0 bg-transparent whitespace-nowrap ${
+                isTabDisabled
+                  ? "opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-600"
+                  : "cursor-pointer " + (isActive ? "text-[#0D53FC] dark:text-blue-400" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")
               }`}
             >
               <Icon className="w-3.5 h-3.5 shrink-0" />
