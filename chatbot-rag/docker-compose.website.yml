@@ -51,5 +51,6 @@ services:
 
 networks:
   website-network:
-    name: ${WEBSITE_NETWORK:-docubot-platform-dev_dev-network}
+    name: ${WEBSITE_NETWORK:-docubot-qa_backend-network}
+    external: true
     

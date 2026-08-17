@@ -216,5 +216,3 @@ conversations/
 # Allow tracking of repository-managed GitHub config and workflows
 !.github/
 !.github/**
-
-pyproject.toml

@@ -41,6 +41,12 @@ chatbot-rag/.coverage
 **/*.db
 **/*.sqlite
 
+# Security & SSL ignores
+nginx/ssl/*.pem
+*.pem
+*.key
+*.crt
+
 # OS / IDE specific ignores
 .DS_Store
 .idea/
