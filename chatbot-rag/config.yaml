@@ -1,0 +1,115 @@
+# Application Configuration
+# This file contains all configuration values for the Schengen Visa RAG Chatbot
+
+# Application Settings
+app:
+  name: "Schengen Visa RAG Chatbot"
+  version: "1.0.0"
+  debug: false
+
+database:
+  user: "doadmin"
+  host: "schengenvisa-do-user-29480745-0.h.db.ondigitalocean.com"
+  port: 25060
+  dbname: "schengendb"
+  # postgresql://doadmin:show-password@schengenvisa-do-user-29480745-0.h.db.ondigitalocean.com:25060/defaultdb?sslmode=require
+
+vector:
+  chunk_size: 1600
+  chunk_overlap: 320
+  min_words_per_chunk: 30
+  max_words_per_chunk: 400
+  collection_name: "schengen_visa_docs"
+  # TODO: Change to intfloat/e5-base-v2 later
+  embedding_model_name: "intfloat/e5-base-v2"
+  embedding_dimension: 768 # Dimension for all-MiniLM-L6-v2 (vs 768 for e5-base-v2) TODO
+  embedding_batch_size:
+    1 #Number of texts per batch
+    # for embedding generation (default: 1, safest)
+    #  Use 1 for low memory, 2-4 only if you have 8GB+ RAM
+  reranker_model_name: "BAAI/bge-reranker-v2-m3"
+  # Example Qdrant Cloud URL:
+  # qdrant_url: "https://<cluster-id>.<region>.aws.cloud.qdrant.io"
+  qdrant_url: "http://2.24.194.172"
+  qdrant_port: 6335
+  # Timeout configuration for Qdrant Cloud connections (in seconds)
+  qdrant_timeout: 60
+  # Retry configuration
+  qdrant_max_retries: 3
+  qdrant_retry_delay: 1.0
+
+rag:
+  retrieval_top_k: 10
+  rerank_top_k: 3
+  low_cutoff: 0.1 # Minimum relevance_score to include a retrieved chunk in the prompt (0.0 disables)
+
+llm:
+  model_name: "openai/gpt-oss-20b"
+  base_url: "https://api.groq.com/openai/v1"
+  temperature: 0.3
+  max_tokens: 1024
+  enable_logprobs: false # Set to false - not all models support logprobs
+  logprobs_top_k: 5
+
+confidence:
+  min_relevance_threshold: 0.7
+  retrieval_weight: 0.7 # Increased since logprobs disabled
+  llm_weight: 0.3 # Decreased since logprobs disabled (returns 0.5 neutral)
+  threshold: 0.5 # Lowered from 0.7 since LLM confidence is neutral
+
+clarification:
+  max_attempts: 2
+
+fallback:
+  # Patterns used to detect when the LLM indicates it does not know the answer.
+  # These are matched case-insensitively against the model output. You can
+  # extend or tune these to control when clarifications are triggered.
+  unknown_patterns:
+    - "i don't know"
+    - "i'm not sure"
+    - "i am not sure"
+    - "i cannot answer"
+    - "cannot answer"
+    - "no information"
+    - "don't have"
+    - "do not have"
+    - "unable to find"
+    - "not in the context"
+    - "not in the provided context"
+    - "no data available"
+    - "sorry, i don't have proper answer"
+
+conversation:
+  storage_path: "./conversations"
+  storage_threshold: 50
+  retrieval_threshold: 20
+  enable_summarization: true
+  recent_count: 10
+  context_window_size: 5 # Number of recent turns to consider for query rewriting
+
+auth:
+  jwt_algorithm: "HS256"
+  jwt_expiration_hours: 24
+  access_jwt_expiration_minutes: 60
+  refresh_jwt_expiration_days: 7
+
+celery:
+  broker_url: "redis://localhost:6379"
+  result_backend: "redis://localhost:6379"
+  task_time_limit: 3600 # 1 hour
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  cors_origins: "*"
+
+logging:
+  level: "DEBUG"
+  format: "text"
+
+upload:
+  log_file: "upload_log.txt"
+  upload_dir: "uploads"
+
+ingestion:
+  scroll_batch_size: 500

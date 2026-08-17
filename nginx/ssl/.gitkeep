@@ -1,2 +1,0 @@
-# Place fullchain.pem and privkey.pem in this directory.
-# You can copy them from HRMS or generate a self-signed cert using OpenSSL.

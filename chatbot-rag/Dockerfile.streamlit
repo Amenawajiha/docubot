@@ -1,0 +1,36 @@
+# Use Python 3.13 slim image
+FROM python:3.13-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+RUN pip install uv
+
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
+
+# Install Python dependencies
+RUN uv sync --no-dev
+
+# Copy application code
+COPY src/ ./src/
+COPY config.yaml ./
+
+# Create necessary directories
+RUN mkdir -p conversations chroma_db uploads
+
+# Set PYTHONPATH
+ENV PYTHONPATH=/app
+
+# Expose Streamlit port
+EXPOSE 8501
+
+# Run Streamlit
+CMD ["uv", "run", "streamlit", "run", "src/ingestion/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]

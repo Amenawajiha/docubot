@@ -1,9 +1,10 @@
 # Ignore all root-level directories and files
 /*
 
-# Allow backend, frontend, deployment files, and this gitignore file
+# Allow backend, frontend, chatbot-rag, deployment files, and this gitignore file
 !/docubot-backend/
 !/docubot-frontend/
+!/chatbot-rag/
 !/docker-compose*.yml
 !/nginx/
 !/.env.example
@@ -25,6 +26,14 @@ docubot-backend/.venv/
 docubot-backend/.env
 docubot-backend/.pytest_cache/
 docubot-backend/server.log
+chatbot-rag/.venv/
+chatbot-rag/.env*
+chatbot-rag/.pytest_cache/
+chatbot-rag/conversations/
+chatbot-rag/uploads/
+chatbot-rag/logs/
+chatbot-rag/*.log
+chatbot-rag/.coverage
 **/__pycache__/
 **/*.pyc
 **/*.pyo

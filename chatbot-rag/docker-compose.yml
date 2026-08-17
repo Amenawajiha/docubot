@@ -1,0 +1,115 @@
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.17.1  # Pinned version for stability.
+    container_name: schengen-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    restart: unless-stopped
+    networks:
+      - schengen-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/collections"]
+      start_period: 20s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    # container_name: schengen-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - RELOAD=false
+      - QDRANT_HOST=${QDRANT_HOST:-qdrant}
+      - QDRANT_PORT=${QDRANT_PORT:-6333}
+    env_file:
+      - .env
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./conversations:/app/conversations
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+    networks:
+      - schengen-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      start_period: 90s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      qdrant:
+        condition: service_started
+
+  # Celery Worker Service
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: uv run celery -A src.celery_app worker --loglevel=info
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - schengen-network
+    depends_on:
+      - backend
+      - qdrant
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend-react
+      dockerfile: Dockerfile
+    container_name: schengen-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - schengen-network
+
+  # Streamlit Admin Panel
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: schengen-streamlit
+    ports:
+      - "8501:8501"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    env_file:
+      - .env
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./conversations:/app/conversations
+      - ./uploads:/app/uploads
+      - ./upload_log.txt:/app/upload_log.txt
+    depends_on:
+      - backend
+      - qdrant
+    restart: unless-stopped
+    networks:
+      - schengen-network
+
+networks:
+  schengen-network:
+    driver: bridge
+
+volumes:
+  qdrant_storage:
+  conversations:
+  uploads:
