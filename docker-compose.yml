@@ -160,4 +160,5 @@ volumes:
 
 networks:
   dev-network:
+    name: docubot-dev-network
     driver: bridge

@@ -2,7 +2,7 @@ name: docubot-rag-website
 
 services:
   # RAG FastAPI Backend API
-  backend:
+  rag-backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
@@ -20,7 +20,8 @@ services:
       - WEBSITE_BACKEND_URL=${WEBSITE_BACKEND_URL:-http://backend:8001}
     restart: unless-stopped
     networks:
-      - website-network
+      - frontend-network
+      - backend-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       start_period: 40s
@@ -45,12 +46,16 @@ services:
       - WEBSITE_BACKEND_URL=${WEBSITE_BACKEND_URL:-http://backend:8001}
     restart: unless-stopped
     networks:
-      - website-network
+      - frontend-network
+      - backend-network
     depends_on:
-      - backend
+      - rag-backend
 
 networks:
-  website-network:
-    name: ${WEBSITE_NETWORK:-docubot-qa_backend-network}
+  frontend-network:
+    name: ${FRONTEND_NETWORK:-docubot-dev-network}
+    external: true
+  backend-network:
+    name: ${BACKEND_NETWORK:-docubot-dev-network}
     external: true
     
