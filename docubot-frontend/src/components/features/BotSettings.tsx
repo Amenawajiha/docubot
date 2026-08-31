@@ -438,7 +438,7 @@ export default function BotSettings() {
                     </select>
                   </div>
                   <p className="text-[10px] text-[#7c828a] leading-normal font-medium">
-                    DocuBot detects your user's browser language automatically to translate greeting steps contextually.
+                    SYNQDOC detects your user's browser language automatically to translate greeting steps contextually.
                   </p>
                 </div>
               </div>

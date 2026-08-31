@@ -91,8 +91,21 @@ class ChatEngine:
         # 2. Quota check
         if not is_playground:
             await self._check_quota(session.workspace_id)
-        elif session.message_count >= 10:
-            raise BadRequestError("Playground query limit reached. Please deploy your chatbot to continue.")
+        else:
+            limit = settings.playground_query_limit
+            total_sent = 0
+            if session.end_user_id:
+                total_sent = await self.ses_repo.get_total_messages_for_end_user(
+                    session.chatbot_id, session.end_user_id
+                )
+            else:
+                total_sent = session.message_count
+
+            if total_sent >= limit:
+                raise BadRequestError(
+                    "Playground query limit reached. Please deploy your chatbot to continue."
+                )
+
 
         # 3. Load chatbot + config
         chatbot = await self.bot_repo.get_by_id_in_workspace(

@@ -341,21 +341,12 @@ export default function Deployments() {
               <p className="text-xs text-[#7c828a] mb-3">Publish to make your chatbot available and generate integration assets.</p>
             )}
             <div className="flex flex-wrap gap-2">
-              <a
-                href={publicUrl}
-                target="_blank"
-                rel="noreferrer"
-                className={`h-8 px-4 rounded-full bg-[#0052ff] hover:bg-[#003ecc] text-white text-xs font-semibold transition-colors flex items-center gap-1.5 ${!isLive && "pointer-events-none opacity-40"}`}
+              <button
+                onClick={() => router.push(`/dashboard/${workspaceId}/bots/${activeBot?.id}/playground`)}
+                disabled={!isLive}
+                className={`h-8 px-4 rounded-full bg-[#0052ff] hover:bg-[#003ecc] text-white text-xs font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-40 cursor-pointer`}
               >
                 <ExternalLink size={12} /> Open Chat
-              </a>
-              <button
-                onClick={() => copyText(publicUrl, "url")}
-                disabled={!isLive}
-                className="h-8 px-4 rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0d111b] text-xs font-semibold text-[#5b616e] dark:text-slate-350 hover:bg-[#f7f7f7] dark:hover:bg-white/5 transition-colors flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
-              >
-                {copiedKey === "url" ? <Check size={12} className="text-[#05b169]" /> : <Copy size={12} />}
-                {copiedKey === "url" ? "Copied" : "Copy URL"}
               </button>
               <button
                 onClick={handleTogglePublish}

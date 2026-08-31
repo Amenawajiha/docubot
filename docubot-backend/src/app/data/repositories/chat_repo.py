@@ -63,6 +63,18 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
             updated_at=datetime.now(timezone.utc),
         )
 
+    async def get_total_messages_for_end_user(
+        self, chatbot_id: uuid.UUID, end_user_id: str
+    ) -> int:
+        result = await self.session.execute(
+            select(func.sum(ChatSession.message_count)).where(
+                ChatSession.chatbot_id == chatbot_id,
+                ChatSession.end_user_id == end_user_id,
+            )
+        )
+        return result.scalar() or 0
+
+
 
 class ChatMessageRepository(BaseRepository[ChatMessage]):
     model = ChatMessage

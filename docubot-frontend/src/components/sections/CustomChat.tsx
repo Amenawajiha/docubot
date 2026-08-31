@@ -29,7 +29,7 @@ export default function CustomChat() {
       id: "support",
       name: "Support Specialist",
       role: "Account & Product Help",
-      welcome: "Hi! I'm your OmniAI Support Agent. How can I help you with your account, billing, or platform features today?",
+      welcome: "Hi! I'm your SYNQDOC Support Agent. How can I help you with your account, billing, or platform features today?",
       avatarColor: "from-indigo-500 to-blue-500",
       quickPrompts: [
         {
@@ -49,9 +49,9 @@ export default function CustomChat() {
         }
       ],
       fallbackResponses: [
-        "That is a great support question! You can configure that directly inside the OmniAI Settings console under the Advanced tab.",
+        "That is a great support question! You can configure that directly inside the SYNQDOC Settings console under the Advanced tab.",
         "I've noted your request. If you need immediate human assistance, please type 'Submit Ticket' and I'll route this to our support desk.",
-        "You can find detailed documentation on this in our Help Center or contact our billing desk at billing@omniai.com."
+        "You can find detailed documentation on this in our Help Center or contact our billing desk at billing@SYNQDOC.com."
       ]
     },
     tech: {
@@ -74,13 +74,13 @@ export default function CustomChat() {
         {
           label: "How to secure webhooks?",
           prompt: "How do I secure webhooks?",
-          response: "To secure webhooks, we sign the payload with a cryptographic SHA-256 HMAC signature. When you receive a webhook, you calculate the HMAC hash using your unique workspace webhook secret and compare it with the signature sent in our custom `X-OmniAI-Signature` HTTP header. This ensures the request is authentic and unmodified."
+          response: "To secure webhooks, we sign the payload with a cryptographic SHA-256 HMAC signature. When you receive a webhook, you calculate the HMAC hash using your unique workspace webhook secret and compare it with the signature sent in our custom `X-SYNQDOC-Signature` HTTP header. This ensures the request is authentic and unmodified."
         }
       ],
       fallbackResponses: [
-        "That's an interesting technical implementation. Usually, you would implement this using standard React fetch requests or by importing our custom npm SDK `@omniai/sdk`.",
-        "If you want to review full API request and response structures, check our developer docs at developers.omniai.com.",
-        "To debug this further, verify your workspace API tokens are loaded correctly into your environment variables as `OMNIAI_API_KEY`."
+        "That's an interesting technical implementation. Usually, you would implement this using standard React fetch requests or by importing our custom npm SDK `@SYNQDOC/sdk`.",
+        "If you want to review full API request and response structures, check our developer docs at developers.SYNQDOC.com.",
+        "To debug this further, verify your workspace API tokens are loaded correctly into your environment variables as `SYNQDOC_API_KEY`."
       ]
     },
     creative: {
@@ -92,8 +92,8 @@ export default function CustomChat() {
       quickPrompts: [
         {
           label: "Draft a product launch tweet",
-          prompt: "Draft a product launch tweet for OmniAI.",
-          response: "🚀 Say hello to OmniAI 2.0! We are transforming how businesses communicate. Real-time NLP, deep vector knowledge search, and automated workflows. Built for builders, trusted by enterprise. Converse. Automate. Elevate. \n\nTry the sandbox free! 👇 \n#AI #ProductLaunch #TechTrends"
+          prompt: "Draft a product launch tweet for SYNQDOC.",
+          response: "Say hello to SYNQDOC 2.0! We are transforming how businesses communicate. Real-time NLP, deep vector knowledge search, and automated workflows. Built for builders, trusted by enterprise. Converse. Automate. Elevate. \n\nTry the sandbox free! 👇 \n#AI #ProductLaunch #TechTrends"
         },
         {
           label: "Catchy chatbot taglines",
@@ -224,7 +224,7 @@ export default function CustomChat() {
             Interact with our AI Agent Personas
           </h2>
           <p className="text-slate-400 text-sm sm:text-base">
-            Select a specialized AI personality, click on quick test prompts, or type custom queries to test the speed and accuracy of the OmniAI system.
+            Select a specialized AI personality, click on quick test prompts, or type custom queries to test the speed and accuracy of the SYNQDOC system.
           </p>
         </div>
 

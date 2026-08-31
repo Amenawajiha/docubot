@@ -310,6 +310,18 @@ class KnowledgeService:
         await self._require_member(workspace_id, actor.id)
 
         col = await self.col_repo.get_for_chatbot(chatbot_id)
+        total_docs = col.total_documents if col else 0
+        total_chunks = col.total_chunks if col else 0
+
+        if total_docs == 0 or total_chunks == 0:
+            from app.data.models import Chatbot
+            bot = await self.session.get(Chatbot, chatbot_id)
+            if bot and bot.is_active:
+                bot.is_active = False
+                bot.deployment_status = "unpublished"
+                self.session.add(bot)
+                await self.session.commit()
+
         if not col:
             # Collection not yet created — return zeroes
             coll_name = collection_name(workspace_id, chatbot_id)
@@ -509,3 +521,12 @@ class KnowledgeService:
             total_chunks=chunk_count,
             storage_used_bytes=int(size_bytes),
         )
+
+        if doc_count == 0 or chunk_count == 0:
+            from app.data.models import Chatbot
+            bot = await self.session.get(Chatbot, chatbot_id)
+            if bot and bot.is_active:
+                bot.is_active = False
+                bot.deployment_status = "unpublished"
+                self.session.add(bot)
+                await self.session.commit()

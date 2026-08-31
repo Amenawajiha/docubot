@@ -42,11 +42,16 @@ export default function Footer() {
         <div className="flex flex-col space-y-4">
           <a
             href="#"
-            className="inline-block"
+            className="inline-flex items-center gap-1 group transition-opacity hover:opacity-90"
             onClick={(e) => handleScrollTo(e, "#")}
           >
-            <span className="text-3xl font-black tracking-tighter text-[#0052ff]">
-              palm ui
+            <img
+              src="/Synq1.svg"
+              alt="SYNQDOC Logo"
+              className="h-[36px] w-auto shrink-0 object-contain transition-transform duration-200 group-hover:scale-105"
+            />
+            <span className="text-3xl font-black tracking-tighter text-slate-900 dark:text-white leading-none">
+              SYN<span className="text-[#0D53FC]">Q</span>DOC
             </span>
           </a>
           <p className="text-[15px] text-[#888888] dark:text-slate-400 font-medium leading-relaxed max-w-sm transition-colors duration-300">

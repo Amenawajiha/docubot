@@ -92,18 +92,12 @@ export default function Header() {
         {/* Logo */}
         <a
           href="#"
-          className="flex items-center space-x-2"
+          className="flex items-center space-x-1"
           onClick={(e) => handleScrollTo(e, "#")}
         >
-          <svg className="h-8 w-8 text-[#0052ff]" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="16" r="6" fill="currentColor" fillOpacity="0.85" />
-            <circle cx="20" cy="16" r="6" fill="currentColor" fillOpacity="0.85" />
-            <circle cx="16" cy="12" r="6" fill="currentColor" fillOpacity="0.85" />
-            <circle cx="16" cy="20" r="6" fill="currentColor" fillOpacity="0.85" />
-            <circle cx="16" cy="16" r="3.5" fill="#ffffff" />
-          </svg>
+          <img src="/Synq1.svg" alt="SYNQDOC Logo" className="h-8 w-8 shrink-0 object-contain" />
           <span className="text-xl font-extrabold tracking-tight text-foreground transition-colors duration-300">
-            DocuBot
+            SYN<span className="text-[#0D53FC]">Q</span>DOC
           </span>
         </a>
 

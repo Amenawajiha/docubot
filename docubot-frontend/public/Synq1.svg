@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 333.83 297.7">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+
+      .cls-2 {
+        fill: #126dfb;
+      }
+
+      .cls-3 {
+        fill: none;
+        stroke: #126dfb;
+        stroke-miterlimit: 10;
+        stroke-width: 41px;
+      }
+    </style>
+  </defs>
+  <g id="synqdoc">
+    <path class="cls-1" d="M266.87,78.41v58.99c0,28.24-22.89,51.13-51.13,51.13H73.88v-8.71h-6.92v-65.52c0-28.23,22.89-51.13,51.13-51.13h141.87v15.24h6.92Z"/>
+  </g>
+  <g>
+    <g id="arrows">
+      <path class="cls-3" d="M53.4,204.89v-70.16c0-28.56,23.16-51.72,51.72-51.72h154.83"/>
+      <path class="cls-3" d="M280.43,103.48v70.16c0,28.57-23.16,51.72-51.72,51.72H73.87"/>
+    </g>
+    <g>
+      <circle class="cls-1" cx="259.96" cy="161.37" r="13.59"/>
+      <circle class="cls-1" cx="73.87" cy="161.37" r="13.59"/>
+      <path class="cls-1" d="M179.5,84.93c0,5.21-3.18,9.69-7.69,11.6v11.89h-9.79v-11.89c-4.52-1.9-7.69-6.38-7.69-11.6,0-6.95,5.64-12.59,12.59-12.59s12.59,5.64,12.59,12.59Z"/>
+    </g>
+    <g id="eyes">
+      <circle class="cls-2" cx="196.46" cy="161.37" r="14.06"/>
+      <circle class="cls-2" cx="130.2" cy="161.37" r="14.06"/>
+    </g>
+  </g>
+</svg>

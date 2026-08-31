@@ -15,7 +15,7 @@ export default function HelpSupport() {
   ];
 
   const articles = [
-    { title: "Getting Started with DocuBot", category: "Onboarding", icon: Zap },
+    { title: "Getting Started with SYNQDOC", category: "Onboarding", icon: Zap },
     { title: "How to Train Your Chatbot with Documents", category: "Knowledge", icon: FileText },
     { title: "Understanding Role-Based Access", category: "Security", icon: ShieldCheck },
     { title: "Deploying to Your Website", category: "Deployment", icon: ExternalLink },

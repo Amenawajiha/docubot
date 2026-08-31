@@ -25,6 +25,7 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://synqdoc.com:8095/api/v1}
         NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://backend:8001}
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-921511286663-hbchpt94pnd1a0acdueigc704q0n9unn.apps.googleusercontent.com}
     container_name: docubot-frontend-prod
     restart: unless-stopped
     env_file:
@@ -34,6 +35,7 @@ services:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://synqdoc.com:8095/api/v1}
       NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://backend:8001}
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-921511286663-hbchpt94pnd1a0acdueigc704q0n9unn.apps.googleusercontent.com}
     networks:
       - frontend-network
     healthcheck:
@@ -58,8 +60,6 @@ services:
       LOG_FORMAT: ${LOG_FORMAT:-json}
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-docubot}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-docubot}}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
-      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
-      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/1}
       QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
       S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-http://minio:9000}
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}

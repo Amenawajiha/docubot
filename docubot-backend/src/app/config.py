@@ -90,6 +90,9 @@ class Settings(BaseSettings):
     # End-user chat session TTL in hours (default 4)
     session_ttl_hours: int = 4
 
+    # ── Playground Settings ───────────────────────────────────────────────────
+    playground_query_limit: int = 10
+
     # ── Billing ───────────────────────────────────────────────────────────────
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""

@@ -128,6 +128,24 @@ class ChatbotService:
         await self._require_role(workspace_id, actor.id, "editor")
         chatbot = await self._require_chatbot(workspace_id, chatbot_id)
 
+        from sqlalchemy import func, select
+        from app.data.models import ChatbotDocument
+
+        doc_count = (
+            await self.session.execute(
+                select(func.count(ChatbotDocument.id)).where(
+                    ChatbotDocument.chatbot_id == chatbot_id,
+                    ChatbotDocument.deleted_at.is_(None),
+                    ChatbotDocument.upload_status == "completed",
+                )
+            )
+        ).scalar_one()
+
+        if doc_count == 0:
+            raise BadRequestError(
+                "Cannot publish chatbot with an empty knowledge base. Please upload documents first."
+            )
+
         chatbot = await self.bot_repo.update(
             chatbot,
             is_active=True,

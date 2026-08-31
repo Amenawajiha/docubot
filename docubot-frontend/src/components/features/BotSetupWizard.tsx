@@ -64,9 +64,16 @@ const QC_DEPLOY_STAGES = [
 
 export default function BotSetupWizard() {
   const router = useRouter();
-  const { workspaceId, changeCurrentChatbot, setChatbots, currentChatbot } =
+  const { workspaceId, changeCurrentChatbot, chatbots, setChatbots, currentChatbot } =
     useWorkspace();
-  const { sendMessage } = usePlayground(workspaceId, currentChatbot?.id);
+  const {
+    messages: playgroundMessages,
+    isTyping: playgroundIsTyping,
+    error: playgroundError,
+    sendMessage,
+  } = usePlayground(workspaceId, currentChatbot?.id);
+
+
   const [mode, setMode] = useState<CreateMode>("choose");
   const [step, setStep] = useState<Step>(1);
 
@@ -98,9 +105,37 @@ export default function BotSetupWizard() {
   const [embedScript, setEmbedScript] = useState("");
   const [localEmbedCodeCopied, setLocalEmbedCodeCopied] = useState(false);
 
-  // TODO: Add logic to fetch and resume Draft/Inactive bots from workspace if the user left off midway through
-
   const [copied, setCopied] = useState<"url" | "embed" | null>(null);
+  const [deployError, setDeployError] = useState<string | null>(null);
+
+  const generateQuickBotName = (bots: any[]) => {
+    const existingNumbers = (bots || [])
+      .map((b) => b.name)
+      .filter((n) => typeof n === "string")
+      .map((n) => {
+        const match = n.match(/^Quick Bot\s*(\d+)$/i);
+        if (match) return parseInt(match[1], 10);
+        if (n.toLowerCase() === "quick bot") return 1;
+        return null;
+      })
+      .filter((n): n is number => n !== null);
+
+    const maxNum = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+    return `Quick Bot ${maxNum + 1}`;
+  };
+
+  const displayMessages = playgroundMessages.length > 0
+    ? playgroundMessages.map((m) => ({
+        role: m.sender === "user" ? ("user" as const) : ("bot" as const),
+        text: m.text,
+      }))
+    : [
+        {
+          role: "bot" as const,
+          text: welcome || "👋 Hi! How can I help you today?",
+        },
+      ];
+
 
   const copyToClipboard = (text: string, key: "url" | "embed") => {
     const fallback = (t: string) => {
@@ -132,6 +167,19 @@ export default function BotSetupWizard() {
   const [quickPhase, setQuickPhase] = useState<QuickPhase>("upload");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const isProcessing = quickPhase === "processing" || localIsTraining;
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isProcessing) {
+        e.preventDefault();
+        e.returnValue = "Document ingestion is currently in progress. Are you sure you want to leave?";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isProcessing]);
+
   useEffect(() => {
     if ((quickPhase === "success" || step === 7) && !lottieData) {
       fetch("/images/Congratulations.json")
@@ -141,12 +189,7 @@ export default function BotSetupWizard() {
     }
   }, [quickPhase, step, lottieData]);
 
-  // Play sandbox message state
-  const [playMessages, setSandboxMessages] = useState<
-    { role: "user" | "bot"; text: string }[]
-  >([{ role: "bot", text: welcome }]);
   const [userInput, setUserInput] = useState("");
-  const [sandboxLoading, setSandboxLoading] = useState(false);
 
   const localCopyEmbedCode = () => {
     navigator.clipboard.writeText(embedScript);
@@ -220,17 +263,38 @@ export default function BotSetupWizard() {
     const interval = setInterval(async () => {
       try {
         let allCompleted = true;
+        let hasFailedJob = false;
+        let failedFileName = "";
         let totalProgress = 0;
-        for (const jobId of jobs) {
+
+        for (const file of localUploadedFiles) {
+          if (!file.jobId) continue;
           const res = await fetchApi(
-            `/workspaces/${workspaceId}/chatbots/${currentChatbot?.id}/ingestion-jobs/${jobId}`,
+            `/workspaces/${workspaceId}/chatbots/${currentChatbot?.id}/ingestion-jobs/${file.jobId}`,
           );
           const data = await res.json();
           totalProgress += data.progress_percent || 0;
-          if (data.job_status !== "completed" && data.job_status !== "failed") {
+
+          if (data.job_status === "failed") {
+            hasFailedJob = true;
+            failedFileName = file.name;
+            allCompleted = false;
+            break;
+          }
+
+          if (data.job_status !== "completed") {
             allCompleted = false;
           }
         }
+
+        if (hasFailedJob) {
+          clearInterval(interval);
+          setLocalIsTraining(false);
+          alert(`Ingestion failed for "${failedFileName}". Please try uploading again.`);
+          setQuickPhase("upload");
+          return;
+        }
+
         setLocalTrainingProgress(Math.floor(totalProgress / jobs.length));
         if (allCompleted) {
           clearInterval(interval);
@@ -314,9 +378,10 @@ export default function BotSetupWizard() {
   };
 
   async function handleDeploySuccess() {
+    setDeployError(null);
     try {
       const payload = {
-        name: name || "Quick Bot",
+        name: name || currentChatbot?.name || "Quick Bot 1",
         brand_color: color,
         tone_preset: tone,
         custom_system_prompt: systemPrompt,
@@ -332,22 +397,29 @@ export default function BotSetupWizard() {
         },
       );
 
-      if (!patchRes.ok) throw new Error("Failed to update bot");
+      if (!patchRes.ok) {
+        const errData = await patchRes.json().catch(() => ({}));
+        throw new Error(errData.detail || "Failed to update bot configurations");
+      }
 
       const deployRes = await fetchApi(
         `/workspaces/${workspaceId}/chatbots/${currentChatbot?.id}/deploy`,
         { method: "POST" },
       );
-      if (!deployRes.ok) throw new Error("Deploy failed");
-      
+
+      if (!deployRes.ok) {
+        const errData = await deployRes.json().catch(() => ({}));
+        throw new Error(errData.detail || "Deploy failed: Knowledge base is empty.");
+      }
+
       const deployData = await deployRes.json();
       if (deployData.embed_snippet) {
         setEmbedScript(deployData.embed_snippet);
       }
       setQuickPhase("success");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setQuickPhase("success");
+      setDeployError(err.message || "Failed to deploy chatbot.");
     }
   }
 
@@ -642,8 +714,11 @@ export default function BotSetupWizard() {
   async function handleStartQuickCreate() {
     setIsCreatingBot(true);
     try {
+      const generatedName = generateQuickBotName(chatbots || []);
+      setName(generatedName);
+
       const payload = {
-        name: "DocuBot Assistant",
+        name: generatedName,
         brand_color: "#0052ff",
         tone_preset: "professional",
         custom_system_prompt: "You are a helpful assistant.",
@@ -688,10 +763,22 @@ export default function BotSetupWizard() {
         <div className="border-b border-[#dee1e6] dark:border-white/5 px-6 py-4 bg-white dark:bg-[#0d111b] shrink-0 sticky top-0 z-10">
           <div className="flex justify-between items-center mb-3">
             <button
-              onClick={() => setMode("choose")}
-              className="flex items-center gap-1 text-xs text-[#5b616e] dark:text-slate-400"
+              onClick={() => {
+                if (isProcessing) return;
+                if (quickPhase === "playground" || quickPhase === "deploying") {
+                  setQuickPhase("upload");
+                } else {
+                  setMode("choose");
+                }
+              }}
+              disabled={isProcessing}
+              className={`flex items-center gap-1 text-xs transition-colors ${
+                isProcessing
+                  ? "text-slate-300 dark:text-slate-600 cursor-not-allowed opacity-50"
+                  : "text-[#5b616e] dark:text-slate-400 hover:text-slate-900 cursor-pointer"
+              }`}
             >
-              <ArrowLeft size={13} /> Back
+              <ArrowLeft size={13} /> {isProcessing ? "Processing..." : "Back"}
             </button>
             <span className="text-[10px] font-bold text-[#7c828a]">
               Quick Setup • Step{" "}
@@ -778,9 +865,9 @@ export default function BotSetupWizard() {
 
               {localUploadedFiles.length > 0 && (
                 <div className="bg-white dark:bg-[#0d111b] rounded-xl border border-[#dee1e6] dark:border-white/5 divide-y divide-[#dee1e6] dark:divide-white/5">
-                  {localUploadedFiles.map((file: any) => (
+                  {localUploadedFiles.map((file: any, idx: number) => (
                     <div
-                      key={file.id}
+                      key={file.id || file.name || `file-${idx}`}
                       className="flex items-center justify-between px-3.5 py-2.5"
                     >
                       <div className="flex items-center gap-2 min-w-0">
@@ -922,7 +1009,7 @@ export default function BotSetupWizard() {
 
                 {/* Messages area */}
                 <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[#f7f8fc] flex flex-col">
-                  {playMessages.map((msg, i) => (
+                  {displayMessages.map((msg, i) => (
                     <div
                       key={i}
                       className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
@@ -945,7 +1032,7 @@ export default function BotSetupWizard() {
                       </div>
                     </div>
                   ))}
-                  {sandboxLoading && (
+                  {playgroundIsTyping && (
                     <div className="flex gap-2 justify-start">
                       <div className="w-6 h-6 rounded-full bg-[#0052ff] flex items-center justify-center shrink-0 shadow-sm">
                         <span className="text-white text-[9px] font-bold">
@@ -961,6 +1048,11 @@ export default function BotSetupWizard() {
                           />
                         ))}
                       </div>
+                    </div>
+                  )}
+                  {playgroundError && (
+                    <div className="p-2.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl text-[10px] text-center font-medium shadow-sm animate-fadeIn">
+                      {playgroundError}
                     </div>
                   )}
                 </div>
@@ -1008,6 +1100,20 @@ export default function BotSetupWizard() {
               <h2 className="text-sm font-semibold text-[#0a0b0d] dark:text-white">
                 Deploying your chatbot
               </h2>
+              {deployError && (
+                <div className="p-3.5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/50 rounded-xl flex flex-col gap-2 text-xs text-rose-600 dark:text-rose-300 font-medium animate-fadeIn text-left">
+                  <span>⚠️ {deployError}</span>
+                  <button
+                    onClick={() => {
+                      setDeployError(null);
+                      setQuickPhase("upload");
+                    }}
+                    className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold text-[11px] shrink-0 transition-colors cursor-pointer text-center"
+                  >
+                    Upload Documents
+                  </button>
+                </div>
+              )}
               <div className="space-y-3 pt-2 text-left">
                 {QC_DEPLOY_STAGES.map((s, idx) => {
                   const done = idx < deployStage || deployReady;
@@ -1070,7 +1176,7 @@ export default function BotSetupWizard() {
               </p>
 
               <div className="w-full max-w-[600px] space-y-3">
-                {/* URL Card */}
+                {/* URL Card
                 <div className="bg-white border border-[#eef0f3] rounded-2xl p-2 pl-4 flex items-center justify-between shadow-[0_2px_8px_-4px_rgba(0,0,0,0.06)]">
                   <div className="flex items-center gap-2.5 overflow-hidden">
                     <Globe size={15} className="text-[#a8acb3] shrink-0" />
@@ -1098,7 +1204,7 @@ export default function BotSetupWizard() {
                       </>
                     )}
                   </button>
-                </div>
+                </div> */}
 
                 {/* Embed Code Card */}
                 <div className="space-y-1.5 text-left w-full max-w-[600px] mt-2">
@@ -1203,7 +1309,7 @@ export default function BotSetupWizard() {
                   </label>
                   <input
                     className="w-full h-9 px-3 border border-[#dee1e6] dark:border-white/10 rounded-xl text-xs bg-white dark:bg-[#0d111b] text-[#0a0b0d] dark:text-white focus:border-[#0052ff] outline-none"
-                    placeholder="DocuBot Support Agent"
+                    placeholder="SYNQDOC Support Agent"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                   />
@@ -1257,9 +1363,9 @@ export default function BotSetupWizard() {
 
               {localUploadedFiles.length > 0 && (
                 <div className="bg-white dark:bg-[#0d111b] rounded-xl border border-[#dee1e6] dark:border-white/5 divide-y divide-[#dee1e6] dark:divide-white/5">
-                  {localUploadedFiles.map((file: any) => (
+                  {localUploadedFiles.map((file: any, idx: number) => (
                     <div
-                      key={file.id}
+                      key={file.id || file.name || `file-${idx}`}
                       className="flex items-center justify-between px-3 py-2 text-xs"
                     >
                       <span className="text-[#0a0b0d] dark:text-white truncate">

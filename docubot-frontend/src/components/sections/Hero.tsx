@@ -36,7 +36,7 @@ export default function Hero() {
               Turn Your Documents Into Intelligent Chatbots
             </h1>
             <p className="text-pretty text-sm leading-relaxed text-white/90 sm:text-base md:text-lg">
-              Upload any PDF, DOCX, or website — DocuBot AI trains a custom
+              Upload any PDF, DOCX, or website — SYNQDOC AI trains a custom
               chatbot on your content in minutes. No code required.
             </p>
 
@@ -63,7 +63,7 @@ export default function Hero() {
         <div className="relative z-20 w-full max-w-[873px] shrink-0 overflow-hidden rounded-2xl bg-white shadow-[0_16px_48px_-20px_rgba(15,45,120,0.12)] sm:rounded-3xl transition-colors duration-300">
           <Image
             src={HERO_PREVIEW_SRC}
-            alt="DocuBot AI interface preview"
+            alt="SYNQDOC AI interface preview"
             width={PREVIEW_IMG_WIDTH}
             height={PREVIEW_IMG_HEIGHT}
             priority

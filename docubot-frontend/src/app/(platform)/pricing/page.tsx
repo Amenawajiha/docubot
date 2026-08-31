@@ -3,7 +3,7 @@ import Pricing from "@/components/sections/Pricing";
 import Footer from "@/components/sections/Footer";
 
 export const metadata = {
-  title: "Pricing Plans - DocuBot AI",
+  title: "Pricing Plans - SYNQDOC AI",
   description: "Simple, transparent pricing plans to scale your document AI chatbots.",
 };
 

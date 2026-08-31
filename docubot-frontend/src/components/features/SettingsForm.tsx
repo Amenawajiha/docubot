@@ -327,7 +327,7 @@ export default function SettingsForm() {
                 {[
                   { title: "New conversation alerts", desc: "Get notified when a customer starts a chat", value: alerts, setter: setAlerts },
                   { title: "Weekly performance summary", desc: "A digest of bot activity every Monday morning", value: summary, setter: setSummary },
-                  { title: "Product updates", desc: "News about new DocuBot features", value: updates, setter: setUpdates },
+                  { title: "Product updates", desc: "News about new SYNQDOC features", value: updates, setter: setUpdates },
                   { title: "Low confidence answer alerts", desc: "Notify me when the AI flags a response as needing review", value: lowConfidence, setter: setLowConfidence }
                 ].map((item, idx) => (
                   <div key={item.title} className={`flex items-center justify-between py-3.5 ${idx === 0 ? "pt-0" : ""}`}>
@@ -448,7 +448,7 @@ export default function SettingsForm() {
                   <Plus size={12} /> Generate Key
                 </button>
               </div>
-              <p className="text-xs text-[#7c828a]">Generate API keys to integrate DocuBot features programmatically into your backends or pipelines.</p>
+              <p className="text-xs text-[#7c828a]">Generate API keys to integrate SYNQDOC features programmatically into your backends or pipelines.</p>
               
               <div className="divide-y divide-[#dee1e6] dark:divide-white/5">
                 {apiKeys.map((k) => (

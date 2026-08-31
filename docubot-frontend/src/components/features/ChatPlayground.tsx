@@ -43,6 +43,129 @@ const MODELS = [
   { id: "gemini15", name: "Gemini 1.5 Pro", provider: "Google" },
 ];
 
+function FormattedMessage({ text }: { text: string }) {
+  if (!text) return null;
+
+  const lines = text.split("\n");
+  const blocks: { type: "text" | "table"; content: string[] }[] = [];
+  let currentBlock: { type: "text" | "table"; content: string[] } | null = null;
+
+  for (const line of lines) {
+    const isTableLine = line.trim().startsWith("|") && line.trim().endsWith("|");
+    if (isTableLine) {
+      if (currentBlock && currentBlock.type === "table") {
+        currentBlock.content.push(line);
+      } else {
+        if (currentBlock) blocks.push(currentBlock);
+        currentBlock = { type: "table", content: [line] };
+      }
+    } else {
+      if (currentBlock && currentBlock.type === "text") {
+        currentBlock.content.push(line);
+      } else {
+        if (currentBlock) blocks.push(currentBlock);
+        currentBlock = { type: "text", content: [line] };
+      }
+    }
+  }
+  if (currentBlock) blocks.push(currentBlock);
+
+  const renderFormattedLine = (line: string, idx: number) => {
+    const isBullet = line.trim().startsWith("- ") || line.trim().startsWith("* ");
+    const isNumbered = /^\d+\.\s/.test(line.trim());
+
+    let content = line;
+    if (isBullet) content = line.trim().substring(2);
+    if (isNumbered) content = line.trim().replace(/^\d+\.\s/, "");
+
+    const parts = content.split("**");
+    const formattedContent = parts.map((part, partIdx) => {
+      if (partIdx % 2 === 1) {
+        return (
+          <strong key={partIdx} className="font-semibold text-current">
+            {part}
+          </strong>
+        );
+      }
+      return part;
+    });
+
+    if (isBullet) {
+      return (
+        <ul key={idx} className="list-disc pl-4 my-1">
+          <li>{formattedContent}</li>
+        </ul>
+      );
+    }
+
+    if (isNumbered) {
+      const num = line.trim().match(/^(\d+)\.\s/)?.[1] || "1";
+      return (
+        <ol key={idx} className="list-decimal pl-4 my-1" start={parseInt(num, 10)}>
+          <li>{formattedContent}</li>
+        </ol>
+      );
+    }
+
+    return <p key={idx}>{formattedContent}</p>;
+  };
+
+  return (
+    <div className="space-y-1.5 leading-relaxed">
+      {blocks.map((block, blockIdx) => {
+        if (block.type === "table") {
+          const cleanRows = block.content
+            .filter((l) => !/^\|[\s\-:|]+\|$/.test(l.trim()))
+            .map((l) =>
+              l
+                .split("|")
+                .slice(1, -1)
+                .map((cell) => cell.trim())
+            );
+
+          if (cleanRows.length === 0) return null;
+
+          const headerRow = cleanRows[0];
+          const dataRows = cleanRows.slice(1);
+
+          return (
+            <div key={blockIdx} className="my-2 overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
+              <table className="min-w-full text-left text-xs border-collapse divide-y divide-slate-200 dark:divide-white/10">
+                <thead className="bg-slate-50 dark:bg-white/5 font-semibold text-[#0a0b0d] dark:text-white">
+                  <tr>
+                    {headerRow.map((h, hIdx) => (
+                      <th key={hIdx} className="px-3 py-2 border-r border-slate-200 dark:border-white/10 last:border-r-0">
+                        {renderFormattedLine(h, hIdx)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-white/5 bg-white dark:bg-[#0d111b]">
+                  {dataRows.map((row, rIdx) => (
+                    <tr key={rIdx} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
+                      {row.map((cell, cIdx) => (
+                        <td key={cIdx} className="px-3 py-2 border-r border-slate-100 dark:border-white/5 last:border-r-0 text-[#5b616e] dark:text-slate-300">
+                          {renderFormattedLine(cell, cIdx)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        }
+
+        return (
+          <div key={blockIdx} className="space-y-1">
+            {block.content.map((l, lIdx) => renderFormattedLine(l, lIdx))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function ChatPlayground() {
   const router = useRouter();
   const { currentChatbot, chatbots, workspaceId } = useWorkspace();
@@ -55,6 +178,7 @@ export default function ChatPlayground() {
   const {
     messages: hookMessages,
     isTyping: loading,
+    error,
     sendMessage: hookSendMessage,
     regenerateLastMessage,
   } = usePlayground(workspaceId, activeBotId);
@@ -275,7 +399,7 @@ export default function ChatPlayground() {
                   }`}
                   style={msg.role === "user" ? { backgroundColor: botColor } : {}}
                 >
-                  {msg.text}
+                  <FormattedMessage text={msg.text} />
                 </div>
                 {msg.role === "bot" && (
                   <div className="flex items-center gap-1.5 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -306,6 +430,11 @@ export default function ChatPlayground() {
                   <span key={j} className="w-1.5 h-1.5 rounded-full bg-[#a8acb3] animate-bounce" style={{ animationDelay: `${j * 0.15}s` }} />
                 ))}
               </div>
+            </div>
+          )}
+          {error && (
+            <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-xl text-center text-xs text-red-600 dark:text-red-400 animate-fadeIn">
+              {error}
             </div>
           )}
           <div ref={chatEndRef} />

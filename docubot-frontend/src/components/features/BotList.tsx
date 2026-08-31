@@ -124,6 +124,19 @@ export default function BotList() {
     }
   };
 
+  const formatModelName = (model?: string) => {
+    if (!model) return "GPT-4o";
+    const m = model.toLowerCase();
+    if (m.includes("gpt-oss-20b")) return "GPT-OSS 20B";
+    if (m.includes("llama-3.3-70b")) return "Llama 3.3 70B";
+    if (m.includes("llama-3.1-8b")) return "Llama 3.1 8B";
+    if (m.includes("gpt-4o-mini")) return "GPT-4o Mini";
+    if (m.includes("gpt-4o")) return "GPT-4o";
+    if (m.includes("claude")) return "Claude 3.5";
+    if (m.includes("gemini")) return "Gemini 1.5";
+    return model;
+  };
+
   return (
     <div className="space-y-5 max-w-5xl animate-fadeIn text-left mx-auto">
       {/* ── Header ── */}
@@ -169,7 +182,7 @@ export default function BotList() {
                   className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
                   style={{ background: `linear-gradient(145deg, ${bot.color || "#0052ff"}, ${bot.color || "#0052ff"}cc)` }}
                 >
-                  <span className="text-xl leading-none">{bot.avatarEmoji || "🤖"}</span>
+                  <Bot className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1">
@@ -203,11 +216,11 @@ export default function BotList() {
                     {uiStatus === "Active" && (
                       <span className="flex items-center gap-1.5">
                         <Star size={12} className="text-[#7b8fa8]" />
-                        <span className="font-bold text-[#0a1a2f] dark:text-white">98%</span> satisfaction
+                        <span className="font-bold text-[#0a1a2f] dark:text-white">{bot.chats > 0 ? "98%" : "--"}</span> satisfaction
                       </span>
                     )}
                     <span className="flex items-center gap-1.5">
-                      <Cpu size={12} className="text-[#7b8fa8]" />GPT-4o
+                      <Cpu size={12} className="text-[#7b8fa8]" />{formatModelName(bot.selectedModel)}
                     </span>
                     <span className="flex items-center gap-1.5 ml-auto text-[#7b8fa8]">
                       <Clock size={12} />Edited {getUpdatedString(bot)}
@@ -249,7 +262,7 @@ export default function BotList() {
         })
       ) : (
         <div className="text-center py-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl shadow-sm text-slate-400 dark:text-slate-500 space-y-3">
-          <span className="text-3xl">🤖</span>
+          <Bot className="w-10 h-10 text-slate-400 dark:text-slate-500 mx-auto" />
           <p className="text-sm font-bold">No chatbot assistants active in this workspace.</p>
         </div>
       )}

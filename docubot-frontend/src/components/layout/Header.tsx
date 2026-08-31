@@ -16,21 +16,16 @@ export default function Header() {
     changeCurrentChatbot,
   } = useWorkspace();
 
-  const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [isMembersOpen, setIsMembersOpen] = useState(false);
   const [botSearchQuery, setBotSearchQuery] = useState("");
 
-  const workspaceRef = useRef<HTMLDivElement>(null);
   const chatbotRef = useRef<HTMLDivElement>(null);
   const membersRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (workspaceRef.current && !workspaceRef.current.contains(e.target as Node)) {
-        setIsWorkspaceOpen(false);
-      }
       if (chatbotRef.current && !chatbotRef.current.contains(e.target as Node)) {
         setIsChatbotOpen(false);
       }
@@ -78,37 +73,14 @@ export default function Header() {
       <div className="h-full px-6 flex items-center justify-between">
         {/* Left: Workspace Selector & Chatbot Selector */}
         <div className="flex items-center gap-3 min-w-0">
-          {/* 1. Workspace Selector (connected to GET /workspaces) */}
-          <div className="relative" ref={workspaceRef}>
-            <button
-              onClick={() => setIsWorkspaceOpen(!isWorkspaceOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0d111b] text-xs font-semibold text-[#0a0b0d] dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 transition-all select-none cursor-pointer"
-            >
-              <Building2 size={13} className="text-[#0052ff]" />
-              <span className="truncate max-w-[140px]">{currentWorkspace?.name || "Acme Corp"}</span>
-              <ChevronDown size={12} className="text-slate-400 shrink-0" />
-            </button>
-
-            {isWorkspaceOpen && workspaces && workspaces.length > 0 && (
-              <div className="absolute left-0 top-full mt-1.5 w-56 bg-white dark:bg-[#0d111b] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl py-1.5 z-50">
-                {workspaces.map((ws) => (
-                  <button
-                    key={ws.id}
-                    onClick={() => {
-                      setIsWorkspaceOpen(false);
-                      router.push(`/dashboard/${ws.id}`);
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between border-0 bg-transparent cursor-pointer ${
-                      workspaceId === ws.id ? "font-semibold text-[#0052ff]" : "text-slate-700 dark:text-slate-350"
-                    }`}
-                  >
-                    <span className="truncate">{ws.name}</span>
-                    {workspaceId === ws.id && <span className="w-1.5 h-1.5 rounded-full bg-[#0052ff]" />}
-                  </button>
-                ))}
-              </div>
-            )}
+          {/* 1. Workspace Text Display (Borderless) */}
+          <div className="flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-white select-none shrink-0">
+            <Building2 size={14} className="text-[#0052ff] shrink-0" />
+            <span className="truncate max-w-[180px] tracking-tight">
+              {currentWorkspace?.name || "Workspace"}
+            </span>
           </div>
+          <span className="text-slate-300 dark:text-slate-700 font-light text-sm select-none shrink-0">/</span>
 
           {/* 2. Chatbot Switcher Selector */}
           <div className="relative" ref={chatbotRef}>
@@ -120,10 +92,10 @@ export default function Header() {
               aria-label="Select chatbot"
             >
               <div
-                className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center text-[10px] text-white font-bold"
-                style={{ backgroundColor: currentChatbot?.color || "#0052ff" }}
+                className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center"
+                style={{ backgroundColor: `${currentChatbot?.color || "#0052ff"}20` }}
               >
-                {currentChatbot?.avatarEmoji || "🤖"}
+                <Bot size={13} style={{ color: currentChatbot?.color || "#0052ff" }} />
               </div>
               <span className="font-semibold text-sm text-[#0a0b0d] dark:text-white max-w-36 truncate">
                 {currentChatbot?.name || "Support Assistant"}

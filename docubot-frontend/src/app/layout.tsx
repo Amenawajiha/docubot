@@ -13,8 +13,16 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OmniAI | Next-Gen AI Conversational Platform for Enterprise",
-  description: "Empower your business with OmniAI. Automate workflows, resolve issues, and engage customers with human-grade conversational AI.",
+  title: "SYNQDOC | Next-Gen AI Conversational Platform for Enterprise",
+  description: "Empower your business with SYNQDOC. Automate workflows, resolve issues, and engage customers with human-grade conversational AI.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

@@ -422,7 +422,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                         id: b.id,
                         name: b.name,
                         goal: "Support",
-                        status: b.is_active ? "Active" : "Inactive",
+                        status: (b.is_active && b.deployment_status === "published" && docsCount > 0) ? "Active" : "Inactive",
                         chats: b.total_conversations || 0,
                         docs: docsCount,
                         plan: "Free",

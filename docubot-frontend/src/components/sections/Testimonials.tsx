@@ -8,7 +8,7 @@ export default function Testimonials() {
 
   const testimonials = [
     {
-      quote: "DocuBot AI has cut our customer support load by 65% in less than two weeks. The training process took just 30 seconds after uploading our FAQ files.",
+      quote: "SYNQDOC AI has cut our customer support load by 65% in less than two weeks. The training process took just 30 seconds after uploading our FAQ files.",
       name: "Marcus Aurelius",
       role: "Head of Operations",
       company: "Trajan Logistics",
@@ -85,7 +85,7 @@ export default function Testimonials() {
               What our clients say
             </h2>
             <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base leading-relaxed transition-colors duration-300">
-              Read how companies are automating support, improving response times, and increasing user satisfaction with DocuBot.
+              Read how companies are automating support, improving response times, and increasing user satisfaction with SYNQDOC.
             </p>
 
             {/* Slider Navigation Buttons */}

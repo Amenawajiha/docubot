@@ -17,8 +17,8 @@ export default function FAQ() {
 
   const faqs: FAQItem[] = [
     {
-      question: "How does DocuBot AI train on my documents?",
-      answer: "DocuBot AI parses your uploaded PDF, TXT, or CSV files using advanced retrieval-augmented generation (RAG). It creates a semantic database of your content, allowing the chatbot to answer user queries accurately using only the facts in your documents, avoiding hallucinations.",
+      question: "How does SYNQDOC AI train on my documents?",
+      answer: "SYNQDOC AI parses your uploaded PDF, TXT, or CSV files using advanced retrieval-augmented generation (RAG). It creates a semantic database of your content, allowing the chatbot to answer user queries accurately using only the facts in your documents, avoiding hallucinations.",
     },
     {
       question: "Can I customize the design and behavior of my chatbot?",
@@ -29,7 +29,7 @@ export default function FAQ() {
       answer: "We provide a single-line JavaScript `<script>` tag in the dashboard under the Deploy tab. Simply copy it and paste it into the footer or body of your HTML. It is compatible with React, WordPress, Shopify, Webflow, and any standard website platform.",
     },
     {
-      question: "Does DocuBot AI support multiple languages?",
+      question: "Does SYNQDOC AI support multiple languages?",
       answer: "Absolutely. Powered by GPT-4o and Claude models, our chatbots natively understand and respond in over 95 languages. The bot automatically detects the user's input language and replies in the same language.",
     },
     {
@@ -59,7 +59,7 @@ export default function FAQ() {
             Frequently Asked Questions
           </h2>
           <p className="text-slate-500 dark:text-slate-400 mt-4 text-sm sm:text-base max-w-xl mx-auto font-medium">
-            Have questions about DocuBot AI? Here are the most common questions and answers.
+            Have questions about SYNQDOC AI? Here are the most common questions and answers.
           </p>
         </div>
 

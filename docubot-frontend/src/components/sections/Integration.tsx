@@ -78,7 +78,7 @@ export default function Integration() {
             Integrate with Your Everyday Tools
           </h2>
           <p className="text-slate-400 text-sm sm:text-base">
-            Deploy OmniAI directly into your current tech ecosystem. No complicated coding required — connect using our native one-click plugins.
+            Deploy SYNQDOC directly into your current tech ecosystem. No complicated coding required — connect using our native one-click plugins.
           </p>
         </div>
 

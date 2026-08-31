@@ -194,7 +194,7 @@ export default function ChatWidgetPage({ params }: { params: Promise<{ channelId
             {
               id: 'welcome',
               role: 'assistant',
-              content: data.welcome_message || 'Hello! I am your **DocuBot** assistant. How can I help you today?',
+              content: data.welcome_message || 'Hello! I am your **SYNQDOC** assistant. How can I help you today?',
               timestamp: new Date(),
             },
           ]);
@@ -413,7 +413,7 @@ export default function ChatWidgetPage({ params }: { params: Promise<{ channelId
               theme === 'dark' ? 'bg-[#1C2541] border border-slate-800' : 'bg-slate-50 border border-slate-100'
             }`}>
               <Loader2 className="animate-spin text-blue-500" size={16} />
-              <span className="text-xs text-slate-400">DocuBot is searching...</span>
+              <span className="text-xs text-slate-400">SYNQDOC is searching...</span>
             </div>
           </div>
         )}
