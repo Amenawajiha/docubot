@@ -1,0 +1,658 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* ── Brand & accent ── */
+  --color-primary: #0052ff;
+  --color-primary-active: #003ecc;
+  --color-primary-disabled: #a8b8cc;
+  --color-accent-yellow: #f4b000;
+  --color-on-primary: #ffffff;
+
+  /* ── Surfaces (Coinbase light canvas) ── */
+  --color-canvas: #ffffff;
+  --color-surface-soft: #f7f7f7;
+  --color-surface-strong: #eef0f3;
+  --color-surface-dark: #0a0b0d;
+  --color-surface-dark-elevated: #16181c;
+
+  /* ── Hairlines ── */
+  --color-hairline: #dee1e6;
+  --color-hairline-soft: #eef0f3;
+
+  /* ── Text ── */
+  --color-ink: #0a0b0d;
+  --color-body: #5b616e;
+  --color-body-strong: #0a0b0d;
+  --color-muted: #7c828a;
+  --color-muted-soft: #a8acb3;
+  --color-on-dark: #ffffff;
+  --color-on-dark-soft: #a8acb3;
+
+  /* ── Semantic semantic tokens ── */
+  --color-semantic-up: #05b169;
+  --color-semantic-down: #cf202f;
+
+  /* ── Mapped background/text vars ── */
+  --bg-deep: var(--color-canvas);
+  --bg-base: var(--color-canvas);
+  --bg-elevated: var(--color-canvas);
+  --bg-shell: var(--color-surface-soft);
+  --bg-subtle: var(--color-surface-soft);
+  --bg-skeleton: var(--color-surface-strong);
+  --bg-hover: var(--color-surface-soft);
+  --bg-row-alt: var(--color-surface-soft);
+  --bg-glass: var(--color-canvas);
+  --bg-glass-hover: var(--color-surface-soft);
+  --bg-band-soft: var(--color-surface-soft);
+
+  --text-primary: var(--color-ink);
+  --text-heading: var(--color-ink);
+  --text-body: var(--color-body);
+  --text-secondary: var(--color-muted);
+  --text-caption: var(--color-muted);
+  --text-muted: var(--color-muted);
+  --text-placeholder: var(--color-muted);
+  --text-disabled: var(--color-muted-soft);
+  --icon-default: var(--color-muted);
+
+  --border-subtle: var(--color-hairline);
+  --border-primary: var(--color-hairline);
+  --border-secondary: var(--color-hairline-soft);
+  --border-table: var(--color-hairline-soft);
+  --border-glow: var(--color-primary);
+  --focus-ring: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  --accent-text: var(--color-primary);
+
+  --topbar-bg: var(--color-canvas);
+  --nav-public-bg: var(--color-canvas);
+  --sidebar-bg: var(--color-surface-soft);
+  --modal-overlay: rgba(10, 11, 13, 0.45);
+
+  --input-bg: var(--color-canvas);
+  --input-border: var(--color-hairline);
+  --input-focus-bg: var(--color-canvas);
+  --secondary-bg: var(--color-surface-strong);
+  --secondary-hover: var(--color-surface-soft);
+
+  --chart-grid: var(--color-hairline-soft);
+  --chart-axis: var(--color-muted);
+
+  --table-head-bg: var(--color-surface-soft);
+  --table-body-bg: var(--color-canvas);
+  --table-row-alt: var(--color-surface-soft);
+  --table-row-hover: var(--color-surface-soft);
+  --kb-row-hover: var(--color-surface-soft);
+
+  /* Next.js standard system variables overrides */
+  --background: #ffffff;
+  --foreground: var(--color-ink);
+  --primary: var(--color-primary);
+  --primary-hover: var(--color-primary-active);
+  --gray-bg: var(--color-surface-soft);
+  --card-border: var(--color-hairline);
+  --card: #ffffff;
+  --card-foreground: var(--color-ink);
+  --popover: #ffffff;
+  --popover-foreground: var(--color-ink);
+  --primary-foreground: #ffffff;
+  --secondary: var(--color-surface-soft);
+  --secondary-foreground: var(--color-ink);
+  --muted: var(--color-surface-soft);
+  --muted-foreground: var(--color-muted);
+  --accent: var(--color-surface-soft);
+  --accent-foreground: var(--color-primary);
+  --destructive: #cf202f;
+  --border: var(--color-hairline);
+  --input: var(--color-hairline);
+  --ring: var(--color-primary);
+  --radius: 0.75rem;
+
+  --sidebar: var(--color-surface-soft);
+  --sidebar-foreground: var(--color-body);
+  --sidebar-primary: var(--color-primary);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--color-surface-strong);
+  --sidebar-accent-foreground: var(--color-ink);
+  --sidebar-border: var(--color-hairline);
+  --sidebar-ring: var(--color-primary);
+}
+
+.dark {
+  /* ── Mapped background/text vars ── */
+  --bg-deep: var(--color-surface-dark);
+  --bg-base: var(--color-surface-dark-elevated);
+  --bg-elevated: var(--color-surface-dark-elevated);
+  --bg-shell: var(--color-surface-dark);
+  --bg-subtle: #1e2024;
+  --bg-skeleton: #1e2024;
+  --bg-hover: #1e2024;
+  --bg-row-alt: var(--color-surface-dark);
+  --bg-glass: var(--color-surface-dark-elevated);
+  --bg-glass-hover: #1e2024;
+  --bg-band-soft: var(--color-surface-dark);
+
+  --text-primary: var(--color-on-dark);
+  --text-heading: var(--color-on-dark);
+  --text-body: var(--color-on-dark-soft);
+  --text-secondary: var(--color-on-dark-soft);
+  --text-caption: var(--color-on-dark-soft);
+  --text-muted: var(--color-on-dark-soft);
+  --text-placeholder: #8b9098;
+  --text-disabled: var(--color-muted-soft);
+  --icon-default: var(--color-on-dark-soft);
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-primary: rgba(255, 255, 255, 0.12);
+  --border-secondary: rgba(255, 255, 255, 0.08);
+  --border-table: rgba(255, 255, 255, 0.08);
+  --border-glow: var(--color-primary);
+  --focus-ring: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  --accent-text: #6b9fff;
+
+  --topbar-bg: var(--color-surface-dark);
+  --nav-public-bg: var(--color-surface-dark);
+  --sidebar-bg: var(--color-surface-dark);
+  --modal-overlay: rgba(0, 0, 0, 0.65);
+  --kb-upload-bg: var(--color-surface-dark-elevated);
+  --kb-table-head: var(--color-surface-dark);
+  --kb-row-hover: #1e2024;
+
+  --input-bg: #1e2024;
+  --input-border: rgba(255, 255, 255, 0.12);
+  --input-focus-bg: #1e2024;
+  --secondary-bg: var(--color-surface-dark-elevated);
+  --secondary-hover: #1e2024;
+
+  --chart-grid: rgba(255, 255, 255, 0.08);
+  --chart-axis: var(--color-on-dark-soft);
+
+  --table-head-bg: var(--color-surface-dark);
+  --table-body-bg: var(--color-surface-dark-elevated);
+  --table-row-alt: var(--color-surface-dark);
+  --table-row-hover: #1e2024;
+  --kb-row-hover: #1e2024;
+
+  /* Next.js standard system variables overrides */
+  --background: var(--color-surface-dark);
+  --foreground: var(--color-on-dark);
+  --gray-bg: #1e2024;
+  --card-border: rgba(255, 255, 255, 0.08);
+  --card: var(--color-surface-dark-elevated);
+  --card-foreground: var(--color-on-dark);
+  --popover: var(--color-surface-dark-elevated);
+  --popover-foreground: var(--color-on-dark);
+  --primary-foreground: #ffffff;
+  --secondary: var(--color-surface-dark-elevated);
+  --secondary-foreground: var(--color-on-dark);
+  --muted: var(--color-surface-dark-elevated);
+  --muted-foreground: var(--color-on-dark-soft);
+  --accent: var(--color-surface-dark-elevated);
+  --accent-foreground: #6b9fff;
+  --destructive: #cf202f;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: var(--color-primary);
+
+  --sidebar: var(--color-surface-dark);
+  --sidebar-foreground: var(--color-on-dark-soft);
+  --sidebar-primary: var(--color-primary);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--color-surface-dark-elevated);
+  --sidebar-accent-foreground: var(--color-on-dark);
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: var(--color-primary);
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-gray-bg: var(--gray-bg);
+  --color-card-border: var(--card-border);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
+.hero-gradient {
+  background-image: linear-gradient(
+    180deg,
+    #08257c 0%,
+    #1348d4 28%,
+    #2563ff 46%,
+    #6b9cff 58%,
+    #cfe2ff 68%,
+    #f5f9ff 82%,
+    var(--background) 94%,
+    var(--background) 100%
+  );
+}
+
+.dark .hero-gradient {
+  background-image: linear-gradient(
+    180deg,
+    #020b26 0%,
+    #051b54 28%,
+    #0d33a6 46%,
+    #1348d4 58%,
+    #1e5bfa 68%,
+    #0a1945 82%,
+    var(--background) 94%,
+    var(--background) 100%
+  );
+}
+
+body {
+  background-color: var(--background);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Hero background mesh grid */
+@keyframes hero-grid-mesh-drift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(72px, 72px, 0);
+  }
+}
+
+@keyframes hero-grid-mesh-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.hero-grid-mesh {
+  position: absolute;
+  top: -72px;
+  left: -72px;
+  width: calc(100% + 72px);
+  height: calc(100% + 72px);
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.28) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.28) 1px, transparent 1px);
+  background-size: 72px 72px;
+  animation:
+    hero-grid-mesh-drift 20s linear infinite,
+    hero-grid-mesh-pulse 4s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-grid-mesh {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/* Steps flow — sequential reveal + per-step icon motion */
+@keyframes steps-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes steps-arrow-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px) scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes steps-arrow-pulse {
+  0%,
+  100% {
+    transform: translateX(0);
+    background-color: #e8f0ff;
+  }
+  50% {
+    transform: translateX(4px);
+    background-color: #d6e6ff;
+  }
+}
+
+@keyframes step-icon-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes step-icon-scan {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+  50% {
+    opacity: 0.55;
+    transform: translate(4px, -4px);
+  }
+}
+
+@keyframes step-icon-sparkle {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes step-icon-grid-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes step-icon-pill-pop {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+@keyframes step-icon-ripple {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.35;
+  }
+  70% {
+    transform: scale(1.08);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.12);
+    opacity: 0;
+  }
+}
+
+.steps-card-enter {
+  animation: steps-card-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+
+.steps-arrow-enter {
+  animation: steps-arrow-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+
+.steps-arrow-active {
+  animation: steps-arrow-pulse 0.9s ease-in-out infinite;
+}
+
+.bg-radial-gradient {
+  background-image: radial-gradient(circle, var(--tw-gradient-from, currentColor) 0%, var(--tw-gradient-to, transparent) 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .steps-card-enter,
+  .steps-arrow-enter,
+  .steps-arrow-active,
+  .step-icon-wrap-active,
+  .step-icon-wrap-active * {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* Why Choose Us — blue wave card backgrounds */
+.stat-card-waves {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.stat-card-waves__layer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 55%;
+}
+
+.stat-card-waves__layer--slow {
+  opacity: 0.85;
+}
+
+.stat-card-waves__layer--float {
+  /* static */
+}
+
+.stat-card-waves--light .stat-card-wave-path {
+  fill: rgba(13, 83, 252, 0.1);
+}
+
+.stat-card-waves--light .stat-card-wave-path-2 {
+  fill: rgba(13, 83, 252, 0.06);
+}
+
+.stat-card-waves--light .stat-card-wave-path-3 {
+  fill: rgba(91, 143, 255, 0.08);
+}
+
+.stat-card-waves--highlight .stat-card-wave-path {
+  fill: rgba(255, 255, 255, 0.14);
+}
+
+.stat-card-waves--highlight .stat-card-wave-path-2 {
+  fill: rgba(255, 255, 255, 0.08);
+}
+
+.stat-card-waves--highlight .stat-card-wave-path-3 {
+  fill: rgba(200, 225, 255, 0.1);
+}
+
+/* Why Choose Us - Background Wave Flow Animation */
+@keyframes section-wave-pan-1 {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(-15%); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes section-wave-pan-2 {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(-20%); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes section-wave-pan-3 {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(-25%); }
+  100% { transform: translateX(0); }
+}
+
+.wave-layer-1 {
+  animation: section-wave-pan-1 25s ease-in-out infinite;
+}
+
+.wave-layer-2 {
+  animation: section-wave-pan-2 30s ease-in-out infinite reverse;
+}
+
+.wave-layer-3 {
+  animation: section-wave-pan-3 35s ease-in-out infinite;
+}
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* Custom dashboard utility animations */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-20px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(105vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.animate-fall {
+  animation: confetti-fall 3s linear forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Dark mode global text overrides to ensure all gray/slate texts are pure white (#ffffff) */
+.dark .text-slate-250,
+.dark .text-slate-300,
+.dark .text-slate-350,
+.dark .text-slate-400,
+.dark .text-slate-450,
+.dark .text-slate-500,
+.dark .text-slate-550,
+.dark .text-slate-600,
+.dark .text-slate-650,
+.dark .text-slate-700,
+.dark .text-slate-800,
+.dark .text-slate-900,
+.dark .text-zinc-400,
+.dark .text-zinc-500 {
+  color: #ffffff !important;
+}
+
+/* Card borders and separation lines in dark mode override to a premium silver color */
+.dark .border-slate-200,
+.dark .border-white\/5,
+.dark .border-blue-500\/15,
+.dark .border-slate-800,
+.dark .border-slate-800\/80 {
+  border-color: rgba(226, 232, 240, 0.15) !important; /* Premium subtle silver edge */
+}
+
+.dark .border-dashed {
+  border-color: rgba(226, 232, 240, 0.3) !important; /* Brighter dashed silver edge */
+}
