@@ -1,11 +1,11 @@
-"""
-ChatEngine — WebSocket orchestrator for end-user chat.
+﻿"""
+ChatEngine â€” WebSocket orchestrator for end-user chat.
 
 Responsibilities per message:
   1. Validate session token
   2. Check workspace token quota (Redis-cached)
   3. Fetch conversation history from DB
-  4. Load chatbot config (DB → decrypt API key)
+  4. Load chatbot config (DB â†’ decrypt API key)
   5. POST to chatbot-rag /api/chat (stateless call)
   6. Store user message + assistant message in DB
   7. Log token usage
@@ -62,7 +62,7 @@ _log = logging.getLogger(__name__)
 # Global httpx client for chatbot-rag communication
 _rag_client = httpx.AsyncClient(timeout=120)
 
-# Redis key for quota cache — 5-minute TTL so we don't hit DB on every message
+# Redis key for quota cache â€” 5-minute TTL so we don't hit DB on every message
 _QUOTA_CACHE_TTL = 300
 
 
@@ -91,7 +91,7 @@ class ChatEngine:
         # 2. Quota check
         if not is_playground:
             await self._check_quota(session.workspace_id)
-        elif session.message_count >= 10:
+        elif session.message_count >= 100:
             raise BadRequestError("Playground query limit reached. Please deploy your chatbot to continue.")
 
         # 3. Load chatbot + config
@@ -222,7 +222,7 @@ class ChatEngine:
             "execution_time_ms":       rag_response.get("execution_time_ms"),
         }
 
-    # ── Private helpers ───────────────────────────────────────────────────────
+    # â”€â”€ Private helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     async def _validate_session(self, token: str):
         return await ChatSessionService(self.db).validate_session_token(token)

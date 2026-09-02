@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useRef } from "react"
 import * as THREE from "three"
@@ -304,14 +304,21 @@ export default function PhotonBeam(props: PhotonBeamProps = {}) {
       rebuildLines()
 
       // --- ANIMATION LOOP ---
-      const clock = new THREE.Clock()
+      let startTime = 0
+      let pausedTime = 0
+      let lastPauseStart = 0
       let loopRunning = false
+
+      const getElapsedTime = (): number => {
+        if (!startTime) return 0
+        return (performance.now() - startTime - pausedTime) * 0.001
+      }
 
       function animate(): void {
         if (cancelled || !loopRunning) return
         frameId = requestAnimationFrame(animate)
 
-        const time = clock.getElapsedTime()
+        const time = getElapsedTime()
 
         // Update Lines
         backgroundLines.forEach((line) => {
@@ -404,14 +411,19 @@ export default function PhotonBeam(props: PhotonBeamProps = {}) {
       const startLoop = (): void => {
         if (loopRunning || cancelled) return
         loopRunning = true
-        clock.start()
+        if (!startTime) {
+          startTime = performance.now()
+        } else if (lastPauseStart) {
+          pausedTime += performance.now() - lastPauseStart
+          lastPauseStart = 0
+        }
         animate()
       }
 
       const stopLoop = (): void => {
         if (!loopRunning) return
         loopRunning = false
-        clock.stop()
+        lastPauseStart = performance.now()
         if (frameId) cancelAnimationFrame(frameId)
       }
 
@@ -461,3 +473,4 @@ export default function PhotonBeam(props: PhotonBeamProps = {}) {
     <div ref={containerRef} className={`h-full min-h-[200px] w-full ${props.colorBg === "transparent" ? "bg-transparent" : "bg-black"}`} />
   )
 }
+

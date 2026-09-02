@@ -1,4 +1,4 @@
-from functools import lru_cache
+﻿from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -11,37 +11,37 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # ── Application ──────────────────────────────────────────────────────────
+    # â”€â”€ Application â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     app_env: str = "development"
     app_secret_key: str
     debug: bool = False
 
-    # ── URLs ──────────────────────────────────────────────────────────────────
-    # Base URL of THIS backend server — used to build OAuth callback URIs.
+    # â”€â”€ URLs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # Base URL of THIS backend server â€” used to build OAuth callback URIs.
     # Dev:  http://localhost:8000
     # Prod: https://api.yourdomain.com
     backend_url: str = "http://localhost:8001"
-    # Base URL of the frontend — used in email links and OAuth redirects.
-    frontend_url: str = "http://localhost:3000"
+    # Base URL of the frontend â€” used in email links and OAuth redirects.
+    frontend_url: str = "http://localhost:8091"
 
-    # ── Database ─────────────────────────────────────────────────────────────
+    # â”€â”€ Database â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     database_url: str
     database_pool_size: int = 20
     database_max_overflow: int = 10
 
-    # ── Redis ─────────────────────────────────────────────────────────────────
+    # â”€â”€ Redis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     redis_url: str = "redis://localhost:6379/0"
 
-    # ── JWT ───────────────────────────────────────────────────────────────────
+    # â”€â”€ JWT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     jwt_secret_key: str
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
     refresh_token_expire_days: int = 7
 
-    # ── Fernet ────────────────────────────────────────────────────────────────
+    # â”€â”€ Fernet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     fernet_key: str
 
-    # ── Email (fastapi-mail) ──────────────────────────────────────────────────
+    # â”€â”€ Email (fastapi-mail) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     mail_username: str = ""
     mail_password: str = ""
     mail_from: str = "noreply@docubot.app"
@@ -50,18 +50,18 @@ class Settings(BaseSettings):
     mail_port: int = 587
     mail_starttls: bool = True
     mail_ssl_tls: bool = False
-    # True in dev → skip real SMTP, print link to console instead
+    # True in dev â†’ skip real SMTP, print link to console instead
     mail_suppress_send: bool = False
 
-    # ── Celery ────────────────────────────────────────────────────────────────
+    # â”€â”€ Celery â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     celery_broker_url: str = "amqp://guest:guest@localhost:5672//"
     celery_result_backend: str = "redis://localhost:6379/1"
 
-    # ── Qdrant ────────────────────────────────────────────────────────────────
+    # â”€â”€ Qdrant â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     qdrant_url: str = "http://localhost:6333"
     qdrant_api_key: str = ""
 
-    # ── S3 / MinIO ────────────────────────────────────────────────────────────
+    # â”€â”€ S3 / MinIO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     s3_endpoint_url: str = ""
     s3_external_endpoint_url: str = ""
     s3_access_key: str = ""
@@ -69,33 +69,35 @@ class Settings(BaseSettings):
     s3_bucket_name: str = "docubot-files"
     s3_region: str = "us-east-1"
 
-    # ── LLM ───────────────────────────────────────────────────────────────────
+    # â”€â”€ LLM & Voice â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     default_openai_api_key: str = ""
+    groq_api_key: str = ""
+    default_tts_voice: str = "en-US-AriaNeural"
 
-    # ── Knowledge base ────────────────────────────────────────────────────────
+    # â”€â”€ Knowledge base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     # Max file size in MB for document uploads
     max_upload_size_mb: int = 50
     # Chatbot-RAG service URL (used for health checks and direct API calls if needed)
     chatbot_rag_url: str = "http://localhost:8000"
 
-    # ── Chatbot Retention & Cleanup ───────────────────────────────────────────
+    # â”€â”€ Chatbot Retention & Cleanup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     # Number of days soft-deleted chatbots and their MinIO/Qdrant assets are
     # preserved before being permanently hard-deleted by the background worker.
     chatbot_retention_days: int = 1
 
-    # ── Internal API ──────────────────────────────────────────────────────────
+    # â”€â”€ Internal API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     # Shared secret this backend sends to chatbot-rag in X-Internal-API-Key
     # Must match the key configured in the chatbot-rag service
     internal_api_key: str = ""
     # End-user chat session TTL in hours (default 4)
     session_ttl_hours: int = 4
 
-    # ── Billing ───────────────────────────────────────────────────────────────
+    # â”€â”€ Billing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
     stripe_publishable_key: str = ""
  
-    # ── Rate limiting ────────────────────────────────────────────────────────
+    # â”€â”€ Rate limiting â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     # Set to False to disable all rate limiting (useful in development/testing)
     rate_limit_enabled: bool = True
     # Override individual zone limits via env (useful for staging/prod tuning)
@@ -106,17 +108,17 @@ class Settings(BaseSettings):
     rate_limit_internal: int = 500     # per internal key per minute
     rate_limit_workspace: int = 120    # per user per minute
  
-    # ── Testing ───────────────────────────────────────────────────────────────
+    # â”€â”€ Testing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     test_database_url: str = ""
 
-    # ── OAuth — Google ────────────────────────────────────────────────────────
+    # â”€â”€ OAuth â€” Google â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     google_client_id: str = ""
 
-    # ── OAuth — GitHub ────────────────────────────────────────────────────────
+    # â”€â”€ OAuth â€” GitHub â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     github_client_id: str = ""
     github_client_secret: str = ""
 
-    # ── Derived properties ────────────────────────────────────────────────────
+    # â”€â”€ Derived properties â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @property
     def is_production(self) -> bool:
         return self.app_env == "production"

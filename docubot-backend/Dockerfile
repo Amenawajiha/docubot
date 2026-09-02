@@ -1,4 +1,4 @@
-# ── Stage 1: Builder ─────────────────────────────────────────────────────────
+﻿# ── Stage 1: Builder ─────────────────────────────────────────────────────────
 FROM python:3.12-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -19,7 +19,7 @@ COPY pyproject.toml ./
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir .
 
-# ── Stage 2: Runtime ────────────────────────────────────────────────────────
+# ── Stage 2: Runtime ─────────────────────────────────────────────────────────
 FROM python:3.12-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -32,6 +32,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     libpq5 \
+    sed \
     && rm -rf /var/lib/apt/lists/* && \
     groupadd -g 1001 appgroup && \
     useradd -u 1001 -g appgroup -s /bin/sh appuser
@@ -42,7 +43,8 @@ COPY alembic /app/alembic
 COPY alembic.ini /app/alembic.ini
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 
-RUN chmod +x /app/docker-entrypoint.sh && \
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh && \
+    chmod +x /app/docker-entrypoint.sh && \
     chown -R appuser:appgroup /app
 
 USER appuser

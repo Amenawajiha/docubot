@@ -175,3 +175,28 @@ async def websocket_playground_chat(
             await websocket.close(code=1011)
         except Exception:
             pass
+
+
+@router.websocket("/voice")
+async def websocket_playground_voice_chat(
+    websocket: WebSocket,
+    workspace_id: uuid.UUID,
+    chatbot_id: uuid.UUID,
+    session: DbSession,
+    token: str = Query(..., description="Session token from POST /session"),
+) -> None:
+    """
+    Playground Voice WebSocket endpoint.
+    Handles streaming audio input, STT via Groq Whisper, RAG query via ChatEngine,
+    and TTS audio streaming via Edge-TTS.
+    """
+    _log.info("Playground Voice WebSocket incoming! token=%s", token)
+    await websocket.accept()
+
+    from app.core.voice.voice_engine import VoiceEngine
+    voice_engine = VoiceEngine(session)
+    await voice_engine.handle_voice_session(
+        websocket=websocket,
+        session_token=token,
+        is_playground=True,
+    )

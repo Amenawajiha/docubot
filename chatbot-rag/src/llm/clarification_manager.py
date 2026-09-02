@@ -1,4 +1,4 @@
-"""Clarification manager for handling low-confidence queries."""
+﻿"""Clarification manager for handling low-confidence queries."""
 
 from typing import Dict, List
 
@@ -36,7 +36,7 @@ class ClarificationManager:
         """
         # Check if the last assistant message was a clarification
         # If so, don't ask another clarification immediately (user just responded)
-        for msg in reversed(conversation_history):
+        for msg in reversed(conversation_history or []):
             if msg.get("role") == "assistant":
                 # Check if this was a clarification question
                 content = msg.get("content", "").lower()
@@ -87,7 +87,8 @@ class ClarificationManager:
 
         # Use LLM to generate clarifying question
         logger.debug('Context for clarification LLM: %s', context)
-        clarifying_question, _ = self.llm_orchestrator.send_messages(messages)
+        res = self.llm_orchestrator.send_messages(messages)
+        clarifying_question = res[0] if isinstance(res, (tuple, list)) else res
         self.__attempt_count += 1
         return clarifying_question.strip()
 
@@ -143,7 +144,8 @@ class TenantClarificationManager:
             overall_confidence=confidence_result.overall_confidence,
             conversation_history=conversation_history,
         )
-        clarifying_question, _ = self.llm_orchestrator.send_messages(messages)
+        res = self.llm_orchestrator.send_messages(messages)
+        clarifying_question = res[0] if isinstance(res, (tuple, list)) else res
         self.__attempt_count += 1
         return clarifying_question.strip()
     

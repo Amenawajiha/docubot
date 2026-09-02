@@ -21,6 +21,7 @@ export function usePlayground(workspaceId?: string, chatbotId?: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
   
   const [wsUrl, setWsUrl] = useState<string | null>(null);
   const initialized = useRef<string | null>(null);
@@ -37,6 +38,7 @@ export function usePlayground(workspaceId?: string, chatbotId?: string) {
     
     setMessages([]);
     setError(null);
+    setSessionToken(null);
 
     const initSession = async () => {
       initialized.current = chatbotId;
@@ -67,6 +69,7 @@ export function usePlayground(workspaceId?: string, chatbotId?: string) {
           sessionStorage.setItem(storageKey, JSON.stringify({ token: tokenToUse, sessionId: sessionIdToUse }));
         }
 
+        setSessionToken(tokenToUse);
         setWsUrl(`${getBaseWsUrl()}/workspaces/${workspaceId}/chatbots/${chatbotId}/playground/chat?token=${tokenToUse}`);
 
         // Fetch existing messages if resuming
@@ -152,12 +155,25 @@ export function usePlayground(workspaceId?: string, chatbotId?: string) {
     }
   }, [messages, sendMessage]);
 
+  const addExternalMessage = useCallback((sender: "user" | "bot", text: string) => {
+    setMessages((prev: ChatMessage[]) => [
+      ...prev,
+      {
+        sender,
+        text,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]);
+  }, []);
+
   return {
     messages,
+    sessionToken,
     isTyping,
     connectionStatus: status,
     error,
     sendMessage,
-    regenerateLastMessage
+    regenerateLastMessage,
+    addExternalMessage,
   };
 }

@@ -1,20 +1,22 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bot, Send, RefreshCw,
   Sparkles, Copy, Check, FileText,
-  ThumbsUp, ThumbsDown
+  ThumbsUp, ThumbsDown, Mic
 } from "lucide-react";
 import { useWorkspace } from "@/components/providers/Providers";
 import { usePlayground } from "@/hooks/usePlayground";
 import { fetchApi } from "@/lib/api";
+import { VoiceInterface } from "@/components/features/voice/VoiceInterface";
 
 interface ChatMessage {
   role: "user" | "bot";
   text: string;
   time?: string;
+  sources?: Array<{ title?: string; doc_id?: string }>;
 }
 
 interface ChatbotItem {
@@ -54,11 +56,14 @@ export default function ChatPlayground() {
 
   const {
     messages: hookMessages,
+    sessionToken,
     isTyping: loading,
     sendMessage: hookSendMessage,
     regenerateLastMessage,
+    addExternalMessage,
   } = usePlayground(workspaceId, activeBotId);
 
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [input, setInput] = useState("");
   const [selectedModel, setSelectedModel] = useState(activeBot?.selectedModel || MODELS[0].name);
   const [systemPrompt, setSystemPrompt] = useState(activeBot?.systemPrompt || "");
@@ -194,15 +199,14 @@ export default function ChatPlayground() {
             </select>
           </div>
 
-          {/* System prompt override */}
+          {/* System Prompt */}
           <div>
             <label className="block text-[10px] font-bold text-[#7c828a] uppercase tracking-wider mb-2">System Prompt</label>
             <textarea
-              rows={4}
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs bg-white dark:bg-[#0d111b] text-[#0a0b0d] dark:text-white placeholder-[#a8acb3] focus:border-[#0052ff] outline-none resize-none"
-              placeholder="Override system prompt for testing…"
+              rows={4}
+              className="w-full p-2.5 border border-slate-200 dark:border-white/10 rounded-xl text-xs bg-white dark:bg-[#0d111b] text-[#0a0b0d] dark:text-white focus:border-[#0052ff] outline-none resize-none font-mono"
             />
           </div>
 
@@ -230,9 +234,21 @@ export default function ChatPlayground() {
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-5 h-5 rounded-full shrink-0" style={{ backgroundColor: botColor }} />
             <span className="font-semibold text-sm text-[#0a0b0d] dark:text-white truncate">{botName}</span>
-            <span className="text-xs text-[#7c828a] shrink-0">· Preview mode</span>
+            <span className="text-xs text-[#7c828a] shrink-0">• Preview mode</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setIsVoiceMode((prev) => !prev)}
+              className={`flex items-center gap-1.5 h-7 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                isVoiceMode
+                  ? "bg-rose-500 text-white border-rose-500 shadow-sm animate-pulse"
+                  : "bg-white dark:bg-[#0d111b] text-[#5b616e] dark:text-slate-300 border-slate-200 dark:border-white/10 hover:border-[#0052ff]/40 hover:text-[#0052ff]"
+              }`}
+              title={isVoiceMode ? "Switch to Text Chat" : "Switch to Real-time Voice Mode"}
+            >
+              <Mic size={12} className={isVoiceMode ? "animate-bounce" : ""} />
+              {isVoiceMode ? "Voice Mode Active" : "Voice Mode"}
+            </button>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#e8f8f0] text-[#05b169] font-bold shrink-0">Live</span>
             <button onClick={clearChat} className="flex items-center gap-1 h-7 px-2.5 rounded-lg text-xs font-semibold text-[#7c828a] hover:bg-[#f7f7f7] dark:hover:bg-white/5 transition-colors border-0 bg-transparent cursor-pointer">
               <RefreshCw size={11} /> Reset
@@ -240,7 +256,7 @@ export default function ChatPlayground() {
           </div>
         </div>
 
-        {/* Suggested Prompts */}
+        {/* Suggested Prompts (when no user messages yet) */}
         {userSends === 0 && (
           <div className="px-6 py-3 flex items-center gap-2 border-b border-slate-200 dark:border-white/5 bg-[#f7f7f7] dark:bg-[#0d111b]/30 overflow-x-auto shrink-0">
             <Sparkles size={12} className="text-[#0052ff] shrink-0" />
@@ -257,7 +273,7 @@ export default function ChatPlayground() {
           </div>
         )}
 
-        {/* Message Thread */}
+        {/* Message Thread (Shared seamlessly between Text and Voice) */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} gap-2.5`}>
@@ -275,7 +291,17 @@ export default function ChatPlayground() {
                   }`}
                   style={msg.role === "user" ? { backgroundColor: botColor } : {}}
                 >
-                  {msg.text}
+                  <div className="whitespace-pre-wrap">{msg.text}</div>
+                  {msg.sources && msg.sources.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-slate-100 dark:border-white/10 flex flex-wrap gap-1">
+                      <span className="text-[10px] text-slate-400">Sources:</span>
+                      {msg.sources.map((s, idx) => (
+                        <span key={idx} className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300">
+                          {s.title || `Doc #${idx + 1}`}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 {msg.role === "bot" && (
                   <div className="flex items-center gap-1.5 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -311,27 +337,49 @@ export default function ChatPlayground() {
           <div ref={chatEndRef} />
         </div>
 
-        {/* Message Input Form */}
-        <div className="p-4 bg-white dark:bg-[#0d111b] border-t border-slate-200 dark:border-white/5 shrink-0">
-          <div className="flex items-center gap-3 px-4 py-2.5 border border-slate-200 dark:border-white/10 rounded-full focus-within:border-[#0052ff] bg-white dark:bg-[#0d111b] transition-all">
-            <input
-              className="flex-1 text-xs text-[#0a0b0d] dark:text-white placeholder-[#a8acb3] outline-none bg-transparent"
-              placeholder="Type a test message…"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+        {/* ── Mode Switcher: Voice Dock vs Text Input ── */}
+        {isVoiceMode && workspaceId && activeBotId ? (
+          <div className="pr-20">
+            <VoiceInterface
+              workspaceId={workspaceId}
+              chatbotId={activeBotId}
+              chatbotName={botName}
+              botColor={botColor}
+              sessionToken={sessionToken}
+              onClose={() => setIsVoiceMode(false)}
+              onNewMessage={(msg) => addExternalMessage(msg.role, msg.text)}
             />
-            <button
-              onClick={() => sendMessage()}
-              disabled={!input.trim() || loading}
-              className="w-7 h-7 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity disabled:opacity-40 border-0 cursor-pointer"
-              style={{ backgroundColor: botColor }}
-            >
-              <Send size={11} />
-            </button>
           </div>
-          <p className="text-[10px] text-[#a8acb3] text-center mt-2">Playground uses live AI — responses may vary from production.</p>
-        </div>
+        ) : (
+          <div className="p-4 pr-24 bg-white dark:bg-[#0d111b] border-t border-slate-200 dark:border-white/5 shrink-0">
+            <div className="flex items-center gap-2.5 px-3.5 py-2 border border-slate-200 dark:border-white/10 rounded-full focus-within:border-[#0052ff] bg-white dark:bg-[#0d111b] transition-all">
+              <button
+                type="button"
+                onClick={() => setIsVoiceMode(true)}
+                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-full transition-colors border-0 bg-transparent cursor-pointer shrink-0"
+                title="Switch to Real-time Voice Mode"
+              >
+                <Mic size={16} />
+              </button>
+              <input
+                className="flex-1 text-xs text-[#0a0b0d] dark:text-white placeholder-[#a8acb3] outline-none bg-transparent"
+                placeholder="Type a test message…"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+              />
+              <button
+                onClick={() => sendMessage()}
+                disabled={!input.trim() || loading}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white shrink-0 transition-opacity disabled:opacity-40 border-0 cursor-pointer"
+                style={{ backgroundColor: botColor }}
+              >
+                <Send size={11} />
+              </button>
+            </div>
+            <p className="text-[10px] text-[#a8acb3] text-center mt-2">Playground uses live AI — responses may vary from production.</p>
+          </div>
+        )}
       </div>
     </div>
   );

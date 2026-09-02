@@ -1,4 +1,4 @@
-"""Prompt builder for constructing LLM prompts."""
+﻿"""Prompt builder for constructing LLM prompts."""
 
 from datetime import date
 from typing import Dict, List
@@ -62,7 +62,7 @@ class PromptBuilder:
 Source: {doc_name}
 Type: {chunk_type}
 Content: {content}
-Relevance: {relevance_score:.2f}
+
 """
             context_parts.append(context_part)
 

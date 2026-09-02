@@ -1,4 +1,4 @@
-name: docubot-platform-dev
+﻿name: docubot-platform-dev
 
 services:
   frontend:
@@ -52,7 +52,7 @@ services:
       FERNET_KEY: ${FERNET_KEY:-YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE=}
       CHATBOT_RAG_URL: ${CHATBOT_RAG_URL:-http://host.docker.internal:8000}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-local_development_internal_api_key}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8091}
       BACKEND_URL: ${BACKEND_URL:-http://localhost:8001}
       MAIL_USERNAME: ${MAIL_USERNAME:-amenawajiha2004@gmail.com}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-hcfqsbvxxmkzqdrb}
@@ -61,6 +61,7 @@ services:
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_STARTTLS: ${MAIL_STARTTLS:-true}
       MAIL_SUPPRESS_SEND: ${MAIL_SUPPRESS_SEND:-false}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
