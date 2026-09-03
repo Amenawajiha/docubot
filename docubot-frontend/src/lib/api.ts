@@ -28,8 +28,9 @@ export async function fetchApi(endpoint: string, options: FetchOptions = {}) {
     );
   }
 
-  // Handle 401 Unauthorized by attempting to refresh the token
-  if (response.status === 401 && requireAuth) {
+  // Handle 401 Unauthorized by attempting to refresh the token (skip for auth endpoints)
+  const isAuthEndpoint = endpoint.startsWith("/auth/login") || endpoint.startsWith("/auth/register") || endpoint.startsWith("/auth/refresh");
+  if (response.status === 401 && requireAuth && !isAuthEndpoint) {
     try {
       const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
         method: "POST",

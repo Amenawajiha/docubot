@@ -41,7 +41,7 @@ vector:
 rag:
   retrieval_top_k: 10
   rerank_top_k: 3
-  low_cutoff: 0.1 # Minimum relevance_score to include a retrieved chunk in the prompt (0.0 disables)
+  low_cutoff: 0.0 # Minimum relevance_score to include a retrieved chunk in the prompt (0.0 disables)
 
 llm:
   model_name: "openai/gpt-oss-20b"

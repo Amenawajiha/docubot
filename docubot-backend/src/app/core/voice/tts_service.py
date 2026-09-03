@@ -1,4 +1,4 @@
-﻿"""
+"""
 TTS Service - Edge-TTS asynchronous streaming and sentence synthesis.
 """
 
@@ -39,13 +39,20 @@ def clean_text_for_speech(text: str) -> str:
     cleaned = re.sub(r"[*_~]{1,3}", "", cleaned)
     # Remove headers (#, ##, etc.)
     cleaned = re.sub(r"^#+\s*", "", cleaned, flags=re.MULTILINE)
+    # Remove markdown table dividers and pipes
+    cleaned = re.sub(r"\|[-:\s|]+\|", " ", cleaned)
+    cleaned = re.sub(r"\|", " ", cleaned)
     # Remove bullet points and numbering
-    cleaned = re.sub(r"^[\s*•\-]+\s*", "", cleaned, flags=re.MULTILINE)
+    cleaned = re.sub(r"^[\s*•\-–—]+\s*", "", cleaned, flags=re.MULTILINE)
     cleaned = re.sub(r"^\d+\.\s*", "", cleaned, flags=re.MULTILINE)
     # Collapse multiple whitespace/newlines
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
     # Remove spaces before punctuation
     cleaned = re.sub(r"\s+([.,!?;:])", r"\1", cleaned)
+
+    # If no word characters exist, do not send empty symbols to TTS
+    if not re.search(r"\w", cleaned):
+        return ""
 
     return cleaned
 

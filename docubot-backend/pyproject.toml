@@ -86,3 +86,8 @@ omit = ["*/tests/*", "*/__init__.py/*"]
 [tool.coveragee.report]
 fail_under = 70
 show_missing = true
+
+[dependency-groups]
+dev = [
+    "aiosqlite>=0.22.1",
+]

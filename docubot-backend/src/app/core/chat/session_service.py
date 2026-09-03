@@ -123,6 +123,7 @@ class ChatSessionService:
                 event_type="session_started",
                 end_user_id=data.end_user_id
             )
+            await self.db.commit()
 
         session_out = SessionOut.model_validate(session)
         session_out.welcome_message = chatbot.welcome_message
@@ -175,6 +176,7 @@ class ChatSessionService:
             event_type="session_started",
             end_user_id=end_user_id
         )
+        await self.db.commit()
 
         return session_out
 

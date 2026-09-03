@@ -1,4 +1,4 @@
-﻿"""
+"""
 VoiceEngine - WebSocket orchestrator for voice chat sessions.
 
 Reuses proven ragvoicebot low-latency architecture:
@@ -46,6 +46,7 @@ HALLUCINATION_EXACT = {
     "bye", "goodbye", "hello", "hello.", "hello hello", "so", "so.", "yeah", "yes.",
     "duh", "blah", "blah blah", "blah blah blah"
 }
+HALLUCINATION_SET = HALLUCINATION_EXACT
 
 
 def is_silence_hallucination(text: str) -> bool:

@@ -104,7 +104,8 @@ async def login(
         httponly=True,
         secure=settings.is_production,
         samesite="lax",
-        max_age=settings.access_token_expire_minutes * 60
+        max_age=settings.access_token_expire_minutes * 60,
+        path="/",
     )
     response.set_cookie(
         key="refresh_token",
@@ -112,7 +113,8 @@ async def login(
         httponly=True,
         secure=settings.is_production,
         samesite="lax",
-        max_age=settings.refresh_token_expire_days * 86400
+        max_age=settings.refresh_token_expire_days * 86400,
+        path="/",
     )
     token_response.access_token = ""
     token_response.refresh_token = ""
@@ -145,7 +147,8 @@ async def refresh(
         httponly=True,
         secure=settings.is_production,
         samesite="lax",
-        max_age=settings.access_token_expire_minutes * 60
+        max_age=settings.access_token_expire_minutes * 60,
+        path="/",
     )
     response.set_cookie(
         key="refresh_token",
@@ -153,7 +156,8 @@ async def refresh(
         httponly=True,
         secure=settings.is_production,
         samesite="lax",
-        max_age=settings.refresh_token_expire_days * 86400
+        max_age=settings.refresh_token_expire_days * 86400,
+        path="/",
     )
     token_response.access_token = ""
     token_response.refresh_token = ""
@@ -178,8 +182,8 @@ async def logout(
     if refresh_token:
         await _svc(session).logout(refresh_token)
 
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
+    response.delete_cookie("access_token", path="/")
+    response.delete_cookie("refresh_token", path="/")
     return MessageResponse(message="Logged out successfully.")
 
 
@@ -282,7 +286,8 @@ async def verify_google(
         httponly=True,
         secure=settings.is_production,
         samesite="lax",
-        max_age=settings.access_token_expire_minutes * 60
+        max_age=settings.access_token_expire_minutes * 60,
+        path="/",
     )
     response.set_cookie(
         key="refresh_token",
@@ -290,7 +295,8 @@ async def verify_google(
         httponly=True,
         secure=settings.is_production,
         samesite="lax",
-        max_age=settings.refresh_token_expire_days * 86400
+        max_age=settings.refresh_token_expire_days * 86400,
+        path="/",
     )
     
     token_response.access_token = ""
