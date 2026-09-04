@@ -9,7 +9,6 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001/api/v1}
         NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://localhost:8001}
     # container_name: docubot-frontend-dev (Namespaced by COMPOSE_PROJECT_NAME)
-    restart: always
     ports:
       - "${FRONTEND_PORT:-8091}:3000"
     env_file:
@@ -27,7 +26,6 @@ services:
       context: ./docubot-backend
       dockerfile: Dockerfile
     # container_name: docubot-backend-dev (Namespaced by COMPOSE_PROJECT_NAME)
-    restart: always
     ports:
       - "${BACKEND_PORT:-8001}:8001"
     env_file:
@@ -54,9 +52,9 @@ services:
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-local_development_internal_api_key}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       BACKEND_URL: ${BACKEND_URL:-http://localhost:8001}
-      MAIL_USERNAME: ${MAIL_USERNAME:-amenawajiha2004@gmail.com}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:-hcfqsbvxxmkzqdrb}
-      MAIL_FROM: ${MAIL_FROM:-amenawajiha2004@gmail.com}
+      MAIL_USERNAME: ${MAIL_USERNAME:-help@synqdoc.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-zdvjysdjnhmghsqa}
+      MAIL_FROM: ${MAIL_FROM:-help@synqdoc.com}
       MAIL_SERVER: ${MAIL_SERVER:-smtp.gmail.com}
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_STARTTLS: ${MAIL_STARTTLS:-true}
@@ -78,7 +76,6 @@ services:
   postgres:
     image: postgres:15-alpine
     # container_name: docubot-postgres-dev (Namespaced by COMPOSE_PROJECT_NAME)
-    restart: always
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     env_file:
@@ -102,7 +99,6 @@ services:
   redis:
     image: redis:7-alpine
     # container_name: docubot-redis-dev (Namespaced by COMPOSE_PROJECT_NAME)
-    restart: always
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
@@ -118,7 +114,6 @@ services:
   minio:
     image: minio/minio:latest
     # container_name: docubot-minio-dev (Namespaced by COMPOSE_PROJECT_NAME)
-    restart: always
     ports:
       - "${MINIO_PORT:-9000}:9000"
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
@@ -143,7 +138,6 @@ services:
   qdrant:
     image: qdrant/qdrant:v1.17.1
     # container_name: docubot-qdrant-dev (Namespaced by COMPOSE_PROJECT_NAME)
-    restart: always
     ports:
       - "${QDRANT_PORT:-6333}:6333"
       - "${QDRANT_GRPC_PORT:-6334}:6334"

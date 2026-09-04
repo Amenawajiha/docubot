@@ -143,6 +143,9 @@ class ChatbotService:
         await self._require_role(workspace_id, actor.id, "admin")
         chatbot = await self._require_chatbot(workspace_id, chatbot_id)
         await self.bot_repo.soft_delete(chatbot)
+        
+        from app.core.knowledge.service import KnowledgeService
+        await KnowledgeService(self.session).soft_delete_all_for_chatbot(chatbot.id)
 
     # ── Deploy / Pause ────────────────────────────────────────────────────────
 

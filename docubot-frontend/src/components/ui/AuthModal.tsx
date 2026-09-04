@@ -10,11 +10,78 @@ import { useAuth } from "@/components/providers/Providers";
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialMode?: "signin" | "signup";
+  initialMode?: "signin" | "signup" | "forgot";
+}
+
+function TransparentVideo({ src, className }: { src: string; className?: string }) {
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
+  React.useEffect(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+
+    let animationFrameId: number;
+
+    const render = () => {
+      if (video && video.readyState >= 2) {
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+          if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+          }
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = frame.data;
+          const len = data.length;
+          for (let i = 0; i < len; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const max = Math.max(r, g, b);
+            if (max < 35) {
+              data[i + 3] = 0;
+            } else if (max < 70) {
+              data[i + 3] = Math.round(((max - 35) / 35) * data[i + 3]);
+            }
+          }
+          ctx.putImageData(frame, 0, 0);
+        }
+      }
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    video.play().catch(() => {});
+    animationFrameId = requestAnimationFrame(render);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [src]);
+
+  return (
+    <div className="relative flex items-center justify-center w-full">
+      <video
+        ref={videoRef}
+        src={src}
+        autoPlay
+        loop
+        muted
+        playsInline
+        aria-hidden="true"
+        className="absolute opacity-0 pointer-events-none w-1 h-1 -z-50"
+      />
+      <canvas ref={canvasRef} className={className} />
+    </div>
+  );
 }
 
 export default function AuthModal({ isOpen, onClose, initialMode = "signin" }: AuthModalProps) {
-  const [mode, setMode] = useState<"signin" | "signup">(initialMode);
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">(initialMode);
   const [isAnimating, setIsAnimating] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
   const [isVideoAllowed, setIsVideoAllowed] = useState(false);
@@ -49,6 +116,19 @@ export default function AuthModal({ isOpen, onClose, initialMode = "signin" }: A
         setLoggedIn(true);
         onClose();
 
+      } else if (mode === "forgot") {
+        const res = await fetchApi("/auth/forgot-password", {
+          method: "POST",
+          body: JSON.stringify({ email }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.detail || "Request failed. Please try again.");
+        }
+
+        setSuccess("Password reset email sent! Please check your inbox.");
+        setEmail("");
       } else {
         const res = await fetchApi("/auth/register", {
           method: "POST",
@@ -62,7 +142,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "signin" }: A
         if (!res.ok) {
           const data = await res.json();
           if (Array.isArray(data.detail)) {
-             throw new Error(data.detail[0].msg);
+            throw new Error(data.detail[0].msg);
           }
           throw new Error(data.detail || "Registration failed. Please try again.");
         }
@@ -156,7 +236,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "signin" }: A
 
       {/* Modal Container */}
       <div
-        className={`relative w-full max-w-5xl h-[90vh] max-h-[580px] md:h-[680px] md:max-h-none overflow-hidden rounded-3xl bg-white dark:bg-slate-900 shadow-2xl transition-all duration-500 ease-in-out flex flex-col md:block ${isAnimating ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-4"
+        className={`relative w-full max-w-5xl h-[92vh] max-h-[580px] md:h-[min(680px,90vh)] md:max-h-[90vh] overflow-hidden rounded-3xl bg-white dark:bg-slate-900 shadow-2xl transition-all duration-500 ease-in-out flex flex-col md:block ${isAnimating ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-4"
           }`}
       >
         {/* Close Button */}
@@ -176,21 +256,16 @@ export default function AuthModal({ isOpen, onClose, initialMode = "signin" }: A
           <div className="absolute -top-24 -left-24 w-96 h-96 bg-white opacity-10 rounded-full blur-3xl pointer-events-none"></div>
           <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-black opacity-10 rounded-full blur-3xl pointer-events-none"></div>
 
-          {/* Logo */}
-          <div className="flex items-center space-x-2 mb-2 md:mb-0 md:absolute md:top-10 md:left-10 z-30">
-            <svg className="h-6 w-6 md:h-8 md:w-8 text-white" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="16" r="6" fill="currentColor" fillOpacity="0.85" />
-              <circle cx="20" cy="16" r="6" fill="currentColor" fillOpacity="0.85" />
-              <circle cx="16" cy="12" r="6" fill="currentColor" fillOpacity="0.85" />
-              <circle cx="16" cy="20" r="6" fill="currentColor" fillOpacity="0.85" />
-              <circle cx="16" cy="16" r="3.5" fill="#0052ff" />
-            </svg>
-            <span className="text-lg md:text-xl font-extrabold tracking-tight text-white">
-              DocuBot
-            </span>
-          </div>
-
           <div className="relative z-10 flex-1 flex flex-col justify-center">
+
+            {/* Logo Icon in Middle View */}
+            <div className="mb-4 md:mb-5 flex justify-center items-center w-full">
+              <img
+                src="/images/vedios/Synq.svg"
+                alt="SYNQDOC Logo"
+                className="h-12 w-12 md:h-16 md:w-16 object-contain drop-shadow-md"
+              />
+            </div>
 
             {/* Title / Description Transitions */}
             <div className="relative h-12 md:h-[130px]">
@@ -212,31 +287,17 @@ export default function AuthModal({ isOpen, onClose, initialMode = "signin" }: A
 
             {/* Single Shared & Lazy-Loaded Video Player */}
             {isVideoAllowed && (
-              <div
-                className="mt-6 hidden md:flex justify-center w-full"
-                style={{ mixBlendMode: "screen", transform: "translate3d(0,0,0)" }}
-              >
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full max-w-[460px] h-[360px] object-contain opacity-95"
-                  style={{
-                    mixBlendMode: "screen",
-                    transform: "scale(1.6) translateX(-95px) translateY(-75px) translate3d(0,0,0)"
-                  }}
-                >
-                  <source src="/images/chat bot icon3.webm" type="video/webm" />
-                  <source src="/images/chat bot icon3.mp4" type="video/mp4" />
-                  <source src="/images/chat bot icon3.webm.mov" type="video/quicktime" />
-                </video>
+              <div className="mt-2 hidden md:flex items-center justify-center w-full relative overflow-visible">
+                <TransparentVideo
+                  src="/images/vedios/greetings.webm"
+                  className="w-full max-w-[420px] h-[240px] md:h-[280px] lg:h-[350px] object-contain drop-shadow-xl scale-100 md:scale-105 lg:scale-115 transition-all duration-500"
+                />
               </div>
             )}
           </div>
 
           <div className="relative z-10 text-[10px] md:text-xs text-blue-200 hidden md:block md:absolute md:bottom-10 md:left-10">
-            © 2026 DocuBot. All rights reserved.
+            © 2026 SYNQDOC. All rights reserved.
           </div>
         </div>
 
@@ -244,22 +305,16 @@ export default function AuthModal({ isOpen, onClose, initialMode = "signin" }: A
         {/* SIGN IN FORM CONTAINER                                                    */}
         {/* ========================================================================= */}
         <div
-          className={`absolute left-0 right-0 bottom-0 top-0 md:left-1/2 md:w-1/2 md:h-full p-4 sm:p-8 md:p-10 bg-white dark:bg-slate-900 z-10 transition-all duration-500 ease-in-out flex flex-col justify-start md:justify-center overflow-y-auto md:overflow-visible ${mode === "signin"
+          className={`absolute left-0 right-0 bottom-0 top-0 md:left-1/2 md:w-1/2 md:h-full p-4 sm:p-6 md:p-8 lg:p-10 bg-white dark:bg-slate-900 z-10 transition-all duration-500 ease-in-out flex flex-col justify-start md:justify-center overflow-y-auto ${mode === "signin"
             ? "translate-x-0 opacity-100 pointer-events-auto"
             : "translate-x-full md:translate-x-0 md:opacity-0 md:pointer-events-none opacity-0 pointer-events-none"
             }`}
         >
           {/* Mobile Logo Brand */}
-          <div className="md:hidden flex items-center space-x-2 mb-4 shrink-0">
-            <svg className="h-6 w-6 text-[#0052ff]" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="16" r="6" fill="currentColor" fillOpacity="0.85" />
-              <circle cx="20" cy="16" r="6" fill="currentColor" fillOpacity="0.85" />
-              <circle cx="16" cy="12" r="6" fill="currentColor" fillOpacity="0.85" />
-              <circle cx="16" cy="20" r="6" fill="currentColor" fillOpacity="0.85" />
-              <circle cx="16" cy="16" r="3.5" fill="#0052ff" />
-            </svg>
-            <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white">
-              DocuBot
+          <div className="md:hidden flex items-center justify-center space-x-2.5 mb-5 shrink-0 w-full">
+            <img src="/images/vedios/Synq.svg" alt="SYNQDOC Logo" className="h-10 w-10 shrink-0 object-contain drop-shadow-sm" />
+            <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+              SYN<span className="text-[#0052ff]">Q</span>DOC
             </span>
           </div>
 
@@ -270,12 +325,10 @@ export default function AuthModal({ isOpen, onClose, initialMode = "signin" }: A
             <h2 className="text-lg md:text-[26px] font-extrabold text-slate-900 dark:text-white mb-0.5 md:mb-2 tracking-tight">
               Welcome back
             </h2>
-            <p className="text-[11px] md:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-              Enter your details below to access your account. <span className="text-[#0052ff] font-semibold block mt-0.5 md:mt-1 font-sans">Hint: admin@docubot.ai / password123</span>
-            </p>
+            
           </div>
 
-          {error && (
+          {error && mode === "signin" && (
             <div className="mb-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 dark:text-red-400 text-xs font-semibold text-center">
               {error}
             </div>
@@ -300,9 +353,13 @@ export default function AuthModal({ isOpen, onClose, initialMode = "signin" }: A
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <label className="text-xs md:text-sm font-semibold text-slate-700 dark:text-slate-300">Password</label>
-                <a href="#" className="text-[10px] md:text-xs font-medium text-[#0052ff] hover:text-[#003ecc] transition-all">
+                <button
+                  type="button"
+                  onClick={() => { setMode("forgot"); setError(""); setSuccess(""); }}
+                  className="text-[10px] md:text-xs font-medium text-[#0052ff] hover:text-[#003ecc] transition-all"
+                >
                   Forgot password?
-                </a>
+                </button>
               </div>
               <div className="relative group">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#0052ff] transition-colors" />
@@ -348,7 +405,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "signin" }: A
             Don&apos;t have an account?{" "}
             <button
               className="font-semibold text-[#0052ff] hover:text-[#003ecc] transition-colors"
-              onClick={() => setMode("signup")}
+              onClick={() => { setMode("signup"); setError(""); setSuccess(""); }}
             >
               Sign up
             </button>
@@ -356,25 +413,92 @@ export default function AuthModal({ isOpen, onClose, initialMode = "signin" }: A
         </div>
 
         {/* ========================================================================= */}
+        {/* FORGOT PASSWORD FORM CONTAINER                                              */}
+        {/* ========================================================================= */}
+        <div
+          className={`absolute left-0 right-0 bottom-0 top-0 md:left-1/2 md:w-1/2 md:h-full p-4 sm:p-6 md:p-8 lg:p-10 bg-white dark:bg-slate-900 z-10 transition-all duration-500 ease-in-out flex flex-col justify-start md:justify-center overflow-y-auto ${mode === "forgot"
+            ? "translate-x-0 opacity-100 pointer-events-auto"
+            : "translate-x-full md:translate-x-0 md:opacity-0 md:pointer-events-none opacity-0 pointer-events-none"
+            }`}
+        >
+          {/* Mobile Logo Brand */}
+          <div className="md:hidden flex items-center justify-center space-x-2.5 mb-5 shrink-0 w-full">
+            <img src="/images/vedios/Synq.svg" alt="SYNQDOC Logo" className="h-10 w-10 shrink-0 object-contain drop-shadow-sm" />
+            <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+              SYN<span className="text-[#0052ff]">Q</span>DOC
+            </span>
+          </div>
+
+          <div className="mb-3 md:mb-6 mt-1 md:mt-0">
+            <div className="w-7 h-7 md:w-10 md:h-10 bg-blue-50 dark:bg-[#0052ff]/10 rounded-xl md:rounded-2xl flex items-center justify-center mb-1.5 md:mb-4 border border-blue-100 dark:border-[#0052ff]/20">
+              <Mail className="w-3.5 h-3.5 md:w-5 md:h-5 text-[#0052ff]" />
+            </div>
+            <h2 className="text-lg md:text-[26px] font-extrabold text-slate-900 dark:text-white mb-0.5 md:mb-2 tracking-tight">
+              Reset your password
+            </h2>
+            <p className="text-[11px] md:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+              Enter your email address to receive a reset link.
+            </p>
+          </div>
+
+          {error && mode === "forgot" && (
+            <div className="mb-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 dark:text-red-400 text-xs font-semibold text-center">
+              {error}
+            </div>
+          )}
+          {success && mode === "forgot" && (
+            <div className="mb-3 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-500 dark:text-green-400 text-xs font-semibold text-center">
+              {success}
+            </div>
+          )}
+
+          <form className="space-y-3" onSubmit={handleSubmit}>
+            <div className="space-y-1">
+              <label className="text-xs md:text-sm font-semibold text-slate-700 dark:text-slate-300">Email Address</label>
+              <div className="relative group">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#0052ff] transition-colors" />
+                <input
+                  type="email"
+                  required
+                  placeholder="Enter Email Address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 md:py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052ff]/20 focus:border-[#0052ff] text-xs md:text-sm text-slate-900 dark:text-white transition-all placeholder:text-slate-400"
+                />
+              </div>
+            </div>
+
+            <button disabled={isLoading} className="w-full flex items-center justify-center space-x-2 bg-[#0052ff] hover:bg-[#003ecc] text-white py-2.5 md:py-3 rounded-xl font-semibold shadow-lg shadow-[#0052ff]/25 transition-all active:scale-[0.98] mt-3 md:mt-4 group text-xs md:text-sm disabled:opacity-70">
+              <span>{isLoading ? "Sending..." : "Send Reset Link"}</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </form>
+
+          <div className="mt-3 md:mt-6 text-center">
+            <button
+              className="text-xs md:text-sm font-semibold text-[#0052ff] hover:text-[#003ecc] transition-colors"
+              type="button"
+              onClick={() => { setMode("signin"); setError(""); setSuccess(""); }}
+            >
+              Back to Sign In
+            </button>
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
         {/* SIGN UP FORM CONTAINER                                                    */}
         {/* ========================================================================= */}
         <div
-          className={`absolute left-0 right-0 bottom-0 top-0 md:left-0 md:w-1/2 md:h-full p-4 sm:p-8 md:p-10 bg-white dark:bg-slate-900 z-10 transition-all duration-500 ease-in-out flex flex-col justify-start md:justify-center overflow-y-auto md:overflow-visible ${mode === "signup"
+          className={`absolute left-0 right-0 bottom-0 top-0 md:left-0 md:w-1/2 md:h-full p-4 sm:p-6 md:p-8 lg:p-10 bg-white dark:bg-slate-900 z-10 transition-all duration-500 ease-in-out flex flex-col justify-start md:justify-center overflow-y-auto ${mode === "signup"
             ? "translate-x-0 opacity-100 pointer-events-auto"
             : "-translate-x-full md:translate-x-0 md:opacity-0 md:pointer-events-none opacity-0 pointer-events-none"
             }`}
         >
           {/* Mobile Logo Brand */}
-          <div className="md:hidden flex items-center space-x-2 mb-4 shrink-0">
-            <svg className="h-6 w-6 text-[#0052ff]" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="16" r="6" fill="currentColor" fillOpacity="0.85" />
-              <circle cx="20" cy="16" r="6" fill="currentColor" fillOpacity="0.85" />
-              <circle cx="16" cy="12" r="6" fill="currentColor" fillOpacity="0.85" />
-              <circle cx="16" cy="20" r="6" fill="currentColor" fillOpacity="0.85" />
-              <circle cx="16" cy="16" r="3.5" fill="#0052ff" />
-            </svg>
-            <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white">
-              DocuBot
+          <div className="md:hidden flex items-center justify-center space-x-2.5 mb-5 shrink-0 w-full">
+            <img src="/images/vedios/Synq.svg" alt="SYNQDOC Logo" className="h-10 w-10 shrink-0 object-contain drop-shadow-sm" />
+            <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
+              SYN<span className="text-[#0052ff]">Q</span>DOC
             </span>
           </div>
 

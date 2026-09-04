@@ -8,7 +8,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.data.models import (
@@ -74,6 +74,17 @@ class DocumentRepository(BaseRepository[ChatbotDocument]):
             document,
             deleted_at=datetime.now(timezone.utc),
             upload_status="deleted",
+        )
+
+    async def soft_delete_by_chatbot(self, chatbot_id: uuid.UUID) -> None:
+        """Soft delete all documents for a specific chatbot."""
+        await self.session.execute(
+            update(ChatbotDocument)
+            .where(ChatbotDocument.chatbot_id == chatbot_id)
+            .values(
+                deleted_at=datetime.now(timezone.utc),
+                upload_status="deleted",
+            )
         )
 
     async def mark_processing(self, document: ChatbotDocument) -> ChatbotDocument:

@@ -1,8 +1,24 @@
 "use client";
 
 import React from "react";
-import { Providers } from "@/components/providers/Providers";
+import { Providers, useAuth } from "@/components/providers/Providers";
 import FloatingChat from "@/components/layout/FloatingChat";
+import Preloader from "@/components/ui/Preloader";
+
+function PlatformContent({ children }: { children: React.ReactNode }) {
+  const { loading } = useAuth();
+
+  if (loading) {
+    return <Preloader />;
+  }
+
+  return (
+    <>
+      {children}
+      <FloatingChat />
+    </>
+  );
+}
 
 export default function PlatformLayout({
   children,
@@ -11,8 +27,7 @@ export default function PlatformLayout({
 }) {
   return (
     <Providers>
-      {children}
-      <FloatingChat />
+      <PlatformContent>{children}</PlatformContent>
     </Providers>
   );
 }

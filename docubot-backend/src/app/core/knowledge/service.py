@@ -251,6 +251,12 @@ class KnowledgeService:
 
     # ── Document delete ───────────────────────────────────────────────────────
 
+    async def soft_delete_all_for_chatbot(self, chatbot_id: uuid.UUID) -> None:
+        """Cascade soft-delete documents for an archived chatbot."""
+        await self.doc_repo.soft_delete_by_chatbot(chatbot_id)
+
+
+
     async def delete_document(
         self,
         workspace_id: uuid.UUID,

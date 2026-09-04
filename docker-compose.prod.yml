@@ -72,9 +72,9 @@ services:
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-local_development_internal_api_key}
       FRONTEND_URL: ${FRONTEND_URL:-https://synqdoc.com:8095}
       BACKEND_URL: ${BACKEND_URL:-https://synqdoc.com:8095}
-      MAIL_USERNAME: ${MAIL_USERNAME:-amenawajiha2004@gmail.com}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:-hcfqsbvxxmkzqdrb}
-      MAIL_FROM: ${MAIL_FROM:-amenawajiha2004@gmail.com}
+      MAIL_USERNAME: ${MAIL_USERNAME:-help@synqdoc.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-zdvjysdjnhmghsqa}
+      MAIL_FROM: ${MAIL_FROM:-help@synqdoc.com}
       MAIL_SERVER: ${MAIL_SERVER:-smtp.gmail.com}
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_STARTTLS: ${MAIL_STARTTLS:-true}

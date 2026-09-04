@@ -17,6 +17,7 @@ MAIL_PASSWORD are empty — which is the normal dev setup when suppress is on.
 
 from __future__ import annotations
 
+import logging
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,8 @@ from typing import Any
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 @lru_cache
@@ -66,7 +69,13 @@ async def _send(
         template_body=context,
         subtype=MessageType.html,
     )
-    await _get_mailer().send_message(message, template_name=template_name)
+    try:
+        await _get_mailer().send_message(message, template_name=template_name)
+    except Exception as exc:
+        logger.error("Failed to dispatch email to %s via SMTP: %s", to, exc)
+        print(f"\n[EMAIL SEND ERROR] Could not dispatch email to {to}: {exc}")
+        if context.get("link"):
+            print(f"[EMAIL FALLBACK LINK] Link for {to}:\n  {context['link']}\n")
 
 
 # ── Public helpers ─────────────────────────────────────────────────────────────
